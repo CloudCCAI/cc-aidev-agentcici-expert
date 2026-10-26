@@ -1,7 +1,7 @@
 interface:
-  display_name: "AgentCiCi"
+  display_name: "cc-aidev-agentcici-expert"
   short_description: "用于管理AgentCiCi组织资源，包括，技能，工具，智能体等，以及开发 Web 应用并打包提交发布申请"
   brand_color: "#A67C2F"
-  default_prompt: "使用 $agentcici-customization-expert 管理当前组织资源，按 Web → 自定义类 → 自定义对象规范开发第三方 AI 应用并准备、校验和提交发布申请包。"
+  default_prompt: "使用 $cc-aidev-agentcici-expert 管理当前组织资源，按 Web → 自定义类 → 自定义对象规范开发第三方 AI 应用并准备、校验和提交发布申请包。"
 policy:
   allow_implicit_invocation: true
