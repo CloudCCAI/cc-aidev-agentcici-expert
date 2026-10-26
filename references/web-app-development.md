@@ -1,5 +1,10 @@
 # 第三方 Web 应用规范
 
+## UI技术边界
+
+本技能开发或迁移的AI应用全部使用原生HTML/CSS/JavaScript静态Web前端。禁止使用、创建或依赖CRM自定义页面customPage/VisualPage、自定义组件pagecomponent/customComponent承载UI。页面、表单、列表、编辑器及交互统一在Web实现；按宿主SDK的iframe或Shadow DOM协议挂载。CRM菜单/按钮仅使用SDK启动入口，不跳转injectionComponent等原生自定义页面路由。旧应用若存在这类依赖，迁移时改为标准Web入口，不把手工预装页面或组件留给安装者。
+
+
 开发前必须先读 [CloudCC CRM Web UI 规范](crm-web-ui.md)，统一视觉变量、紧凑工具栏、列表密度、表单与弹窗样式，并按其桌面验收流程核查；不要让 AI App 在 CRM 中呈现另一套产品外观。
 
 ## 构建与站点

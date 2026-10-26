@@ -65,7 +65,6 @@ def validate_resources(resources, files, installation):
         keys.add(key)
         graph[key] = resource.get('dependsOn', [])
         expected.add(path)
-    require(len(keys) <= 120, '安装资源超过120项')
     for dependencies in graph.values():
         require(isinstance(dependencies, list) and all(isinstance(d, str) and d in keys for d in dependencies), '业务资源依赖不存在或格式无效')
     done = set()

@@ -12,7 +12,7 @@
 - 开发 AI Web 应用，生成 CloudCC 菜单、按钮或全局入口。
 - 准备、校验和提交 AI 应用发布申请包。
 
-当前版本：`1.7.6`
+当前版本：`1.7.7`
 
 仓库名沿用 `cc-aidev-agent-guidelines-common`；技能名称和安装目录使用 `agentcici-customization-expert`。
 

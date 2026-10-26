@@ -48,7 +48,7 @@ connectedApplications是可选布尔开关，缺省为true，转换为requiresCo
 
 ## CloudCC 业务资源交付
 
-第三方应用仍以一个 Web 应用为主体。需要存储时提供自定义对象及字段定义，需要业务逻辑时提供自定义类源码；Web 按 [调用规范](web-app-development.md#web-调用自定义类) 请求类，由类操作对象。明确每项资源的 API Name 和依赖顺序，对象先于字段、依赖资源先于调用它们的类；内部 ID 由安装 org 解析，业务数据与凭据不打包。
+第三方应用以一个 Web 应用为主体，UI不使用或依赖CRM自定义页面和自定义组件；旧菜单中的injectionComponent等自定义页面入口必须改为标准SDK Web挂载入口。需要存储时提供自定义对象及字段定义，需要业务逻辑时提供自定义类源码；Web 按 [调用规范](web-app-development.md#web-调用自定义类) 请求类，由类操作对象。明确每项资源的 API Name 和依赖顺序，对象先于字段、依赖资源先于调用它们的类；内部 ID 由安装 org 解析，业务数据与凭据不打包。
 
 上文 `formatVersion=1` 和常用 `package` 命令描述现有 Web/AI 资源流程，不能据此声称已经打包业务资源。业务资源使用外层 `formatVersion=2`、`cloudccResources` 声明及 `installationManifest.schemaVersion=2`。执行前核对打包工具、发布接收端和 setup-svc 是否实际支持；技能打包器现支持从源清单cloudccResources读取object/field/class，写入v2包并验证资源白名单、路径、依赖和摘要；定义须遵循安装器允许的字段，不直接打包MetadataService plan或源org ID。服务端或setup-svc缺少支持时明确列出阻塞，不静默忽略资源。
 
@@ -112,3 +112,8 @@ python3 /installed/agentcici/scripts/agentcici_application.py delete APP_CODE --
 显式length/decimalPlaces必须为JSON整数，不传字符串或浮点数。J的MetadataService专属131072上限不适用于此安装链路。IMG/FL可传maxFiles整数1–10，默认1；IMG可传imageInputMode=input或url，默认input。maxFiles映射为原生defaultValue，FL同时设置isrepeat；图片录入方式映射formulaType。暂不打包引用公式、水印配置或真实附件内容。不同字段的属性不可混用。
 
 安装初始只给当前系统管理员字段权限；业务简档和受限财务字段需目标管理员按交付说明授权。L/Q/Z/V/MR/AD/LT/SCORE/加密文本尚未纳入此包协议；C虽在类型白名单，但完整累计汇总配置仍未交付，不以白名单通过代替可安装承诺。
+
+
+### V2安装步骤数量（1.7.7）
+
+V2应用不再设置120项或其他固定的安装步骤总数上限；按实际对象、字段、类和入口完整声明，禁止为绕过数量限制删减资源或拆散依赖。保留非空清单、资源类型/路径/摘要、重复API名、依赖存在性及无环校验，包体和清单大小限制仍适用。V1的30步兼容上限不变。目标AgentCiCi与CRM setup-service均需部署取消V2数量上限的版本；仅更新本机打包技能不能解除旧服务的限制。

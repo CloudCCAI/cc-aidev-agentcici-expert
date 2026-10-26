@@ -66,3 +66,28 @@ class ExtendedFieldsTest(unittest.TestCase):
             for path, payload in definitions.items():
                 self.assertEqual(payload, json.loads(files[path]))
                 self.assertEqual(app.digest(files[path]), manifest['sha256'][path])
+
+
+class LargeV2PackageTest(unittest.TestCase):
+    def test_large_package_roundtrip_and_dependency_validation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            (root/'dist').mkdir(); (root/'dist/index.html').write_text('<html>大清单</html>')
+            (root/'cloudcc/metadata').mkdir(parents=True)
+            resources = []
+            for index in range(180):
+                path = 'cloudcc/metadata/model_' + str(index) + '.json'
+                (root/path).write_bytes(app.encode({'apiName': 'model_' + str(index), 'label': '对象' + str(index)}))
+                resources.append({'key': 'model-' + str(index), 'kind': 'object', 'file': path})
+            config = {'schemaVersion': 2, 'appCode': 'large-test', 'name': '大清单', 'version': '1.0.0',
+                      'summary': '大清单验收', 'appType': 'web', 'outputDir': 'dist', 'entry': 'index.html',
+                      'renderer': 'iframe', 'host': {'closeBehavior': 'hide', 'hostLayer': 'content'},
+                      'cloudccResources': resources}
+            (root/'application.json').write_bytes(app.encode(config))
+            app.package(root/'application.json', root/'release.zip')
+            manifest = app.validate(app.read_zip((root/'release.zip').read_bytes()))
+            self.assertEqual(180, len(manifest['cloudccResources']))
+            config['cloudccResources'][-1]['dependsOn'] = ['missing']
+            (root/'application.json').write_bytes(app.encode(config))
+            with self.assertRaises(ValueError):
+                app.package(root/'application.json', root/'invalid.zip')

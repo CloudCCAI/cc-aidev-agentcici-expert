@@ -19,7 +19,7 @@
 </head>
 <body><main>
   <h1>AgentCiCi 开发与管理 Skill</h1>
-  <section class="summary"><strong>阅读摘要</strong><p>这是一个给 Codex 等 AI 智能体使用的 Skill。用户不需要手动运行管理脚本，只需要用自然语言说明目标。当前版本为 <code>1.7.6</code>。</p></section>
+  <section class="summary"><strong>阅读摘要</strong><p>这是一个给 Codex 等 AI 智能体使用的 Skill。用户不需要手动运行管理脚本，只需要用自然语言说明目标。当前版本为 <code>1.7.7</code>。</p></section>
   <p>默认在一个项目文件夹内，通过 <code>applications/&lt;appCode&gt;/</code> 管理多个应用；每个应用独立维护清单、源码与发布产物，项目根目录共用AgentCiCi配置、CloudCC CLI配置和CRM缓存，类源码和对象定义仍在各应用内。<a href="references/application-manifest.md#项目与多应用目录">查看目录规则</a>。已有项目保留其结构，不自动迁移。</p>
   <p><a href="references/development-workflow.md">AI App七阶段流程</a>涵盖Web、对象/字段、自定义类，以及智能体、技能、知识库和MCP关联；AgentCiCi与CRM开发凭据分别配置。知识库开发者管理与组织应用发布需部署对应后端并授予scope。</p>
   <p>Web 使用原生 HTML、CSS、JavaScript；业务按需采用 Web → 自定义类 → 自定义对象、Web → Agent（智能体）两条调用链。</p>
