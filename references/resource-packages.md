@@ -21,12 +21,12 @@
 
 ## 开发者原生导出下载
 
-目标服务部署此扩展后，不需要用户手工下载：
+在目标应用目录执行，使用目标服务的已部署开发者导出接口，不需要平台源码或后台登录Token：
 
 ```bash
-mkdir -p exports
-python3 /installed/agentcici/scripts/agentcici_manage.py agents export customer-email-assistant --output exports/customer-email-assistant.ciciagent
-python3 /installed/agentcici/scripts/agentcici_manage.py skills export 36 --output exports/birthday-writer.zip
+mkdir -p resources
+python3 /installed/agentcici/scripts/agentcici_manage.py agents export customer-email-assistant --output resources/customer-email-assistant.ciciagent
+python3 /installed/agentcici/scripts/agentcici_manage.py skills export 36 --output resources/birthday-writer.zip
 ```
 
 - 智能体：GET `/openapi/v1/management/agents/{agentId}/package`，需要 agent.read 及绑定成员的 MANAGE 权限，复用原生保存草稿快照导出。

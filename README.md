@@ -12,13 +12,27 @@
 - 开发 AI Web 应用，生成 CloudCC 菜单、按钮或全局入口。
 - 准备、校验和提交 AI 应用发布申请包。
 
-当前版本：`1.7.8`
+当前版本：`1.8.1`
+
+## 1.8.1 更新说明
+
+- 安装示例明确使用仓库根目录和技能目录名 `cc-aidev-agentcici-expert`，保留原GitHub仓库地址及已有环境配置，避免按仓库名安装成旧技能名。
+
+## 1.8.0 更新说明
+
+- 应用开发限定 applications/<appCode>，CloudCC资源统一放cloudcc/，不依赖平台源码。
+- 类适配器在应用cloudcc工程内执行，通过临时链接共享根配置/缓存，处理缓存失效重建、并发与失败清理，不再创建根backend映射。
+- 从应用内首次登录也使用根共享配置；旧应用内配置先报冲突，显式路径仍可使用独立身份。
+- 统一已发布SDK/runtime接入、普通应用运行身份、旧菜单显式SDK地址及平台运维边界，清理固定环境和过期示例。
+- 保留1.7.9纯Web/AI/MCP显式V2支持及旧包校验兼容；本机验证不代替目标环境安装。
 
 ## 安装 Skill
 
 把本仓库地址发给 Codex，然后说：
 
-> 请从 https://github.com/CloudCCAI/cc-aidev-agent-guidelines-common 安装 AgentCiCi Skill。
+> 请从 https://github.com/CloudCCAI/cc-aidev-agent-guidelines-common 的仓库根目录安装技能，安装目录名指定为 cc-aidev-agentcici-expert；已有安装按当前工具的升级流程处理，保留环境配置。
+
+使用 Codex 的 `skill-installer` 首次安装时，向其 `scripts/install-skill-from-github.py` 传入 `--repo CloudCCAI/cc-aidev-agent-guidelines-common --path . --name cc-aidev-agentcici-expert`。执行时使用安装器的实际绝对路径；目标已存在时不要直接重复首次安装命令，也不要清空配置。其他AI工具同样保留该技能目录名。仓库名与技能名不同，不按仓库名推导安装目录。
 
 安装后，可以显式指定 Skill：
 
@@ -34,7 +48,7 @@ Web 使用原生 HTML、CSS、JavaScript；业务按需采用 Web → 自定义�
 
 ## 多应用项目
 
-默认在一个项目文件夹中，通过 `applications/<appCode>/` 管理多个 AI 应用。每个应用有自己的清单、源码和发布产物，项目根目录共用AgentCiCi配置、CloudCC CLI配置和CRM缓存；应用源码和文档仍各自保存。CRM类通过 [共用配置适配入口](references/cloudcc-shared-config.md) 操作，无须改动CloudCC CLI。完整结构与管理规则见 [项目与多应用目录](references/application-manifest.md#项目与多应用目录)。已有项目保留其结构，不自动迁移。
+AI 应用开发只在 `applications/<appCode>/` 进行，不需要平台 backend/frontend/deploy 源码。每个应用有自己的清单、源码和发布产物，项目根目录共用AgentCiCi配置、CloudCC CLI配置和CRM缓存；应用源码和文档仍各自保存。CloudCC资源集中在应用cloudcc/，类为cloudcc/backend/classes；[共用配置适配入口](references/cloudcc-shared-config.md)临时链接根配置/缓存，在应用cloudcc工程内调用CLI，无根backend映射。完整结构与管理规则见 [项目与多应用目录](references/application-manifest.md#项目与多应用目录)。已有项目保留其结构，不自动迁移。
 
 ## 登录 AgentCiCi
 

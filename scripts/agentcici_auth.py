@@ -22,7 +22,17 @@ def config_path():
     if explicit:
         return Path(explicit).expanduser().resolve()
     current = Path.cwd()
-    for directory in (current, *current.parents):
+    ancestry = (current, *current.parents)
+    for directory in ancestry:
+        if directory.parent.name == 'applications' and re.fullmatch(r'[a-z][a-z0-9-]{0,63}', directory.name):
+            root = directory.parent.parent
+            for child in ancestry:
+                if child == root:
+                    break
+                if (child / CONFIG_NAME).exists() or (child / CONFIG_NAME).is_symlink():
+                    raise RuntimeError('发现应用内旧登录配置，请先核对归并到项目根；独立身份须显式指定AGENTCICI_CONFIG_PATH')
+            return root / CONFIG_NAME
+    for directory in ancestry:
         path = directory / CONFIG_NAME
         if path.is_file():
             return path

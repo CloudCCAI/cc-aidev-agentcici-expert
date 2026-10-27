@@ -20,7 +20,7 @@
 
 现有 UAT 静态资源服务对 `.mjs` 返回 `application/octet-stream`，浏览器会拒绝将其作为模块执行，从而导致应用初始化超时。上述规则是 AI App 的交付约束，不要求修改平台自身或其他独立项目的模块方案。
 
-框架版本和构建参数以项目锁文件及已安装工具为准。不要引入一个未经提供或发布的 AgentCiCi SDK 包。调用层使用应用自有小模块封装，接真实平台能力前可以用明确标注的 mock；mock 成功不能写成智能体联调成功。
+构建工具、解析库等依赖版本和构建参数以项目锁文件及已安装工具为准；这不改变原生Web源码与普通脚本产物要求。不要引入一个未经提供或发布的 AgentCiCi SDK 包。调用层使用应用自有小模块封装，接真实平台能力前可以用明确标注的 mock；mock 成功不能写成智能体联调成功。
 
 构建包只包含运行必需文件，排除 .env、源码映射、凭据、真实客户数据。VITE_* 等构建变量会进入浏览器，不是密钥存储。打包工具仅做文件名与结构检查，不能证明编译后代码没有敏感内容。
 
@@ -110,21 +110,21 @@ const order = result.data;
 
 运行请求直接使用 `context.apiBase`，它已包含 `/openapi/v1`；业务代码只追加相对端点，不得硬编码该前缀或在缺失时自动补齐。独立本地测试的 `localContext.apiBase` 必须配置完整 API 基地址，例如 `http://127.0.0.1:8080/openapi/v1`。地址拼接与验收见 [运行接口地址规范](agent-runtime-openapi.md#apiBase-与请求路径)。
 
-应用调用以逻辑 agent ref 为输入，由受信服务基于登录用户、org 和安装记录解析真实智能体。通用应用网关尚未提供，不能把此前讨论的网关当成现成 API。项目提供的 agentcici-app.js 是 CloudCC 宿主嵌入 SDK，负责安装配置、换票和 iframe，不是服务端运行网关。真实联调前核对目标环境提供的运行适配层；缺少时保留 mock 和明确阻塞，或在授权范围内实现服务端适配后再接入。已有思思 runtime 接口为特定安装方案，不自动适用于任意新应用。
+应用清单声明逻辑agent ref，已部署的标准应用runtime按当前登录org和安装实例解析运行身份，宿主SDK把完整apiBase等上下文交给子应用。SDK负责安装配置、换票和iframe；它不是另一套模型代理网关。目标环境尚未部署标准runtime或尚未安装应用时，报告该具体缺失，不猜网关、不复用官方应用私有认证，也不为完成普通应用任务自行开发平台后端。
 
 静态站点可访问不代表调用已获授权。站点与 CRM 可能跨域，不能默认读取 parent 的 CCDK、Cookie 或 localStorage。嵌入式登录桥接必须核对实际接口，若采用 postMessage，双方校验精确 origin、消息来源及请求关联；不要把 CRM Token 放 URL。菜单在 CloudCC 宿主页面获取运行配置，再按下述协议传给 iframe；不得把密钥字面值写进脚本。
 
 应用处理 loading、错误、取消与重试，卸载页面终止在途请求。会话 ID 仅复用于同一用户、org、安装实例和智能体；身份切换清空。文件上传结果只能用于所属会话权限范围。流式接口按 SSE 事件边界增量解析，支持跨网络分片，不假设一次 read 就是完整 JSON。
 
-## 展示与生日邮件契约
+## 业务输出契约示例（生日邮件，不是通用功能要求）
 
 桌面端先完成输入表单、生成按钮、主题/正文编辑区和复制反馈。示例契约为 `{"subject":"...","body":"..."}`，提示词约定不代表服务端强制 schema；前端校验缺失字段，保留可理解的失败反馈。用纯文本展示用户输入和模型输出，不直接注入 innerHTML。重复点击不能产生并行请求覆盖结果，重试由用户触发。
 
 生日邮件第一期只生成草稿，不创建发送能力。真实姓名、生日或邮件正文不写入调试日志，默认不持久化。知识库是可选的企业写作依据，不是此例必需资源。
 
-## CloudCC 站点与脚本菜单
+## 历史CloudCC站点接口（按需兼容）
 
-当前站点后台已有 POST `/api/site/saveSite`、`/api/site/uploadZip`、`/api/site/querySiteDetail`、`/api/site/enableSite`。这是 CloudCC 登录接口，不是 AgentCiCi 开发者 OpenAPI。
+新应用通过AgentCiCi标准应用发布和安装流程交付站点，不把直接调用站点接口作为默认步骤。仅在用户明确维护历史独立站点时核验下列接口；不擅自迁移或重复建站。历史站点接口包括 POST `/api/site/saveSite`、`/api/site/uploadZip`、`/api/site/querySiteDetail`、`/api/site/enableSite`。这是 CloudCC 登录接口，不是 AgentCiCi 开发者 OpenAPI。
 
 现有保存参数包含 first、label、apiname、sitecontact、defaultrecordowner、sitepath、fullurl、description、activehomepage、inactivehomepage、isenable、zipid、zipname；负责人、组织前缀等来自目标组织。先创建站点取得 ID，再上传 ZIP。上传为 multipart，字段 `files`、`sitePath`（当前组织/站点路径）、`filesName`、`siteId`。按实际响应与查询结果确认上传成功，不把 HTTP 200 单独当作完成。
 
@@ -134,7 +134,7 @@ const order = result.data;
 
 创建 Web 应用时，未声明 launchers 则默认生成 `menu` 触发入口并在 `page-content` 展示；显式声明时按用户配置生成入口。菜单类型创建一个 CloudCC 自定义脚本菜单，填写 menu.tabName、menu.pname、menu.type=script 和 menu.functioncode。菜单随应用打包，不把“手动添加菜单”留给安装客户。旧menu.json格式的functioncode保留 `__AGENTCICI_SITE_URL__` 兼容标记；新schemaVersion=2通过installationManifest提供完整JS；实际站点 URL 读取 runtime.webUrl；打包工具原样保留自定义脚本。仅打开新窗口的兼容模板不满足新应用交付要求。
 
-CloudCC 菜单、按钮和浮动入口统一加载 `frontend/public/sdk/agentcici-app@1.1.0.js`，再以 `appCode` 调用通用宿主 SDK。应用路由、认证、关闭方式和宿主层级必须声明在应用自己的 `application.json`，不要在公共 SDK 或菜单脚本中实现应用专属逻辑。
+CloudCC 菜单、按钮和浮动入口统一加载目标服务提供的 `sdk/agentcici-app@1.1.0.js`，再以 `appCode` 调用通用宿主 SDK。应用路由、认证、关闭方式和宿主层级必须声明在应用自己的 `application.json`，不要在公共 SDK 或菜单脚本中实现应用专属逻辑。
 
 宿主执行顺序：
 
@@ -149,7 +149,7 @@ CloudCC 菜单、按钮和浮动入口统一加载 `frontend/public/sdk/agentcic
 
 ### Web 应用子页 SDK
 
-普通 iframe 应用在 `index.html` 中先引入已部署的 `agentcici-app@1.1.0.js`，再启动业务代码。业务代码只创建一个 client：
+普通 iframe 应用先加载经确认的官方 `agentcici-app@1.1.0.js`，再调用 createClient；可由 index.html 先引入，或在启动时动态加载并等待成功。动态加载仍追加运行时时间戳。业务代码只创建一个 client：
 
 ```js
 (async function bootstrap() {
@@ -187,12 +187,12 @@ CloudCC 菜单、按钮和浮动入口统一加载 `frontend/public/sdk/agentcic
 
 打包工具为脚本菜单生成启动器，加载公共 SDK 后执行 `AgentCiCiApp.mount({appCode, launcherId})`。SDK 负责 CCDK 登录身份、runtime、连接应用换票、iframe 与初始化消息。自定义 functioncode 仍可覆盖，但必须遵守相同初始化要求。四层清单按入口读取 renderConfig.entryUrl 或安装站点地址；子页面统一使用 SDK `createClient()`，不复制协议实现。
 
-站点发布与 org 资源安装是不同阶段；静态文件就绪不代表智能体/技能已经安装。部署需要 backend 可写与 Nginx 只读的共享目录，以及 /aiapp/ 路由。平台上架权限保持管理员专有。
+站点发布与 org 资源安装是不同阶段；静态文件就绪不代表智能体/技能已经安装。共享目录和 /aiapp/ 路由由平台运维提供，应用开发不创建平台部署工程或自行修改Nginx。平台上架权限保持管理员专有。
 
 
-## CRM 内容区嵌入与清理
+## 公共SDK负责的CRM嵌入行为（应用验收边界）
 
-默认菜单使用 `assets/application-menu.js`，嵌入 `.console-right-content`，使用 prepend 添加自身 section，不覆盖 CRM 节点，不创建全屏遮罩或额外关闭按钮。iframe 允许 clipboard-write，宽度100%，高度依据容器高度与视口剩余空间取较小值。
+以下是公共SDK的职责，用于应用验收；应用不复制这些DOM、消息和生命周期实现。默认菜单由打包器生成SDK启动脚本，旧menu清单才使用 `assets/application-menu.js` 兼容模板。SDK嵌入 `.console-right-content`，使用 prepend 添加自身 section，不覆盖 CRM 节点，不创建全屏遮罩或额外关闭按钮。iframe 允许 clipboard-write，宽度100%，高度依据容器高度与视口剩余空间取较小值。
 
 - 使用 `window.AgentCiCiAppEmbed.destroy()` 销毁上一个实例，再创建本次实例，所有应用采用同一宿主实例入口。
 - 先获取 runtime 配置，再创建 iframe；postMessage 继续校验来源窗口、精确 origin、协议版本和 requestId，凭据不进入 URL。
@@ -203,7 +203,7 @@ CloudCC 菜单、按钮和浮动入口统一加载 `frontend/public/sdk/agentcic
 
 ## 统一宿主 SDK
 
-项目已提供 `frontend/public/sdk/agentcici-app.js`。菜单和脚本按钮调用 `AgentCiCiApp.mount({appCode, launcherId})`，全局悬浮入口调用 `AgentCiCiApp.start({appCode, launcherId})`。位置和 iframe/Shadow DOM 渲染方式由安装快照中对应入口的 renderConfig 决定；旧清单回退应用级 renderConfig。入口不再内联 runtime 请求、CCDK 换票或 iframe DOM。
+公共 SDK 是目标 AgentCiCi 服务提供的已发布资源 `sdk/agentcici-app@1.1.0.js`；应用开发不要求平台源码仓库或 frontend/public 目录。若应用需要随站点携带子页SDK，使用经确认的官方分发文件，记录来源/摘要和兼容验证，避免不同副本无记录漂移。菜单和脚本按钮调用 `AgentCiCiApp.mount({appCode, launcherId})`，全局悬浮入口调用 `AgentCiCiApp.start({appCode, launcherId})`。位置和 iframe/Shadow DOM 渲染方式由安装快照中对应入口的 renderConfig 决定；旧清单回退应用级 renderConfig。入口不再内联 runtime 请求、CCDK 换票或 iframe DOM。
 
 普通页面继续使用上述协议，context 额外提供 display、pageContext；存在连接应用时附加 cloudccContext。业务关闭方式、宿主层级和 CloudCC SSO 票据参数必须由各应用的 host 清单声明，公共 SDK 只执行通用协议，不识别具体 appCode、业务路由或票据前缀。Shadow DOM 应用通过 register 挂载，原生 Web 页面可使用 iframe，无需增加嵌入构建。SDK 已实现不代表目标环境已部署；不得在菜单里嵌入真实密钥。
 

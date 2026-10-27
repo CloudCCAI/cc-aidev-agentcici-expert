@@ -265,6 +265,9 @@ def compile_manifest(config, root):
     if 'mcpServers' in config: installation['mcpServers'] = copy.deepcopy(config['mcpServers'])
     if 'tools' in config: installation['tools'] = copy.deepcopy(config['tools'])
     if 'cloudccResources' in config: result['cloudccResources'] = copy.deepcopy(config['cloudccResources'])
+    if 'formatVersion' in config:
+        if type(config['formatVersion']) is not int or config['formatVersion'] not in (1, 2): raise ValueError('应用包formatVersion只能是1或2')
+        result['formatVersion'] = config['formatVersion']
     if 'upgrade' in config: installation['upgrade'] = copy.deepcopy(config['upgrade'])
     result['installationManifest'] = installation
     return result

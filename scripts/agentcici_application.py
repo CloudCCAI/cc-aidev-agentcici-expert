@@ -11,6 +11,7 @@ import stat
 import sys
 import zipfile
 import urllib.request
+from urllib.parse import urlsplit
 import urllib.error
 import uuid
 from agentcici_manage import Client, NoCredentialRedirect
@@ -264,12 +265,19 @@ def package(source, output):
     if 'menu' in config:
         menu = config['menu']
         require(menu.get('type') == 'script', '菜单必须为 script')
-        files['cloudcc/menu.json'] = encode({'tabName': menu['tabName'], 'pname': menu['pname'], 'type': 'script',
-            'functioncode': menu.get('functioncode') or (pathlib.Path(__file__).resolve().parent.parent / 'assets/application-menu.js').read_text(encoding='utf-8').replace('__APP_CODE__', json.dumps(config['appCode'])).replace('__SDK_URL__', json.dumps(menu.get('sdkUrl', 'https://uat.agentcici.com/sdk/agentcici-app@1.1.0.js')))})
+        script = menu.get('functioncode')
+        if not script:
+            sdk_url = menu.get('sdkUrl', '')
+            require(isinstance(sdk_url, str) and sdk_url, '旧menu清单需要显式sdkUrl或functioncode；新应用请使用schemaVersion=2')
+            url = urlsplit(sdk_url)
+            require((url.scheme == 'https' or url.scheme == 'http' and url.hostname in ('localhost', '127.0.0.1', '::1'))
+                    and url.hostname and not url.username and not url.password and not url.query and not url.fragment, 'SDK地址必须是明确的无凭据HTTPS或本机HTTP地址')
+            script = (pathlib.Path(__file__).resolve().parent.parent / 'assets/application-menu.js').read_text(encoding='utf-8').replace('__APP_CODE__', json.dumps(config['appCode'])).replace('__SDK_URL__', json.dumps(sdk_url))
+        files['cloudcc/menu.json'] = encode({'tabName': menu['tabName'], 'pname': menu['pname'], 'type': 'script', 'functioncode': script})
     manifest['sha256'] = {name: digest(data) for name, data in files.items()}
-    if config.get('cloudccResources'):
+    if config.get('cloudccResources') or config.get('formatVersion') == 2:
         manifest['formatVersion'] = 2
-        manifest['cloudccResources'] = config['cloudccResources']
+        manifest['cloudccResources'] = config.get('cloudccResources', [])
         require('installationManifest' in manifest, '业务资源需要安装清单')
         manifest['installationManifest']['schemaVersion'] = 2
         for resource in manifest['cloudccResources']:

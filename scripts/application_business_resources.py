@@ -19,7 +19,7 @@ def api(value):
 
 
 def validate_resources(resources, files, installation):
-    require(isinstance(resources, list) and resources, '业务资源不能为空')
+    require(isinstance(resources, list), '业务资源声明必须为数组')
     steps = installation.get('steps', [])
     keys = {step['key'] for step in steps}
     require(len(keys) == len(steps), '安装步骤 key 重复')

@@ -19,8 +19,8 @@
 </head>
 <body><main>
   <h1>AgentCiCi 开发与管理 Skill</h1>
-  <section class="summary"><strong>阅读摘要</strong><p>这是一个给 Codex 等 AI 智能体使用的 Skill。用户不需要手动运行管理脚本，只需要用自然语言说明目标。当前版本为 <code>1.7.8</code>。</p></section>
-  <p>默认在一个项目文件夹内，通过 <code>applications/&lt;appCode&gt;/</code> 管理多个应用；每个应用独立维护清单、源码与发布产物，项目根目录共用AgentCiCi配置、CloudCC CLI配置和CRM缓存，类源码和对象定义仍在各应用内。<a href="references/application-manifest.md#项目与多应用目录">查看目录规则</a>。已有项目保留其结构，不自动迁移。</p>
+  <section class="summary"><strong>阅读摘要</strong><p>这是一个给 Codex 等 AI 智能体使用的 Skill。用户不需要手动运行管理脚本，只需要用自然语言说明目标。当前版本为 <code>1.8.1</code>。</p></section>
+  <p>AI应用开发只在 <code>applications/&lt;appCode&gt;/</code> 进行，不需要平台backend/frontend/deploy源码。每个应用独立维护清单、源码与发布产物；CloudCC资源集中在 <code>cloudcc/</code>，类为 <code>cloudcc/backend/classes/</code>。项目根目录共用配置和CRM缓存，适配器临时链接后在应用cloudcc工程内操作，不创建根backend映射。<a href="references/application-manifest.md#项目与多应用目录">查看目录规则</a>。已有项目保留其结构，不自动迁移。</p>
   <p><a href="references/development-workflow.md">AI App七阶段流程</a>涵盖Web、对象/字段、自定义类，以及智能体、技能、知识库和MCP关联；AgentCiCi与CRM开发凭据分别配置。知识库开发者管理与组织应用发布需部署对应后端并授予scope。</p>
   <p>Web 使用原生 HTML、CSS、JavaScript；业务按需采用 Web → 自定义类 → 自定义对象、Web → Agent（智能体）两条调用链。</p>
   <nav aria-label="目录"><h2>目录</h2><ul>
@@ -28,9 +28,13 @@
     <li><a href="#web">AI Web 应用</a></li><li><a href="#release">发布申请</a></li><li><a href="#principles">操作原则</a></li>
   </ul></nav>
 
+  <h2>1.8.1 更新说明</h2><p>安装示例明确使用仓库根目录和技能目录名 <code>cc-aidev-agentcici-expert</code>，保留原GitHub仓库地址及已有环境配置，避免按仓库名安装成旧技能名。</p>
+  <h2>1.8.0 更新说明</h2><p>应用内开发、cloudcc资源集中管理；共享配置适配器改为临时配置/缓存链接，处理缓存重建和失败清理，不创建根backend映射。从应用首次登录也使用根共享配置；统一SDK/runtime说明、旧菜单显式SDK地址与运维边界，保留纯Web显式V2兼容。</p>
+
   <h2 id="install">安装 Skill</h2>
   <p>把仓库地址发给 Codex，然后说：</p>
-  <blockquote>请从 https://github.com/CloudCCAI/cc-aidev-agent-guidelines-common 安装 AgentCiCi Skill。</blockquote>
+  <blockquote>请从 https://github.com/CloudCCAI/cc-aidev-agent-guidelines-common 的仓库根目录安装技能，安装目录名指定为 cc-aidev-agentcici-expert；已有安装按当前工具的升级流程处理，保留环境配置。</blockquote>
+  <p>使用 Codex 的 <code>skill-installer</code> 首次安装时，向其 <code>scripts/install-skill-from-github.py</code> 传入 <code>--repo CloudCCAI/cc-aidev-agent-guidelines-common --path . --name cc-aidev-agentcici-expert</code>。执行时使用安装器的实际绝对路径；目标已存在时不要直接重复首次安装命令，也不要清空配置。其他AI工具同样保留该技能目录名。仓库名与技能名不同，不按仓库名推导安装目录。</p>
   <p>安装后可以说：</p>
   <blockquote>使用 $cc-aidev-agentcici-expert 查看当前组织的智能体。</blockquote>
 

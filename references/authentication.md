@@ -58,7 +58,7 @@ Content-Type: application/json
 }
 ```
 
-配置从当前工作目录向父级查找最近文件，没有时登录创建在当前目录；可以设置 `AGENTCICI_CONFIG_PATH` 明确指定完整路径。不要在技能安装目录登录，避免将业务凭据写入分发包。认证命令 `--env` 优先于 `AGENTCICI_LOGIN_PROFILE`，后者优先于文件 `use`；首次登录默认 `dev`。环境名只允许字母、数字、下划线和连字符，保留字段 `use` 不可作为环境名。同一部署的不同组织可用不同环境名称保存，不能根据 Client ID 猜测组织。
+从 applications/<appCode> 及其子目录执行时固定选择项目根配置，根尚无配置时首次登录也在根创建；发现应用内旧配置先报冲突。其他独立资源管理目录向父级查找最近配置，无则在当前目录创建；可以设置 `AGENTCICI_CONFIG_PATH` 明确指定完整路径。不要在技能安装目录登录，避免将业务凭据写入分发包。认证命令 `--env` 优先于 `AGENTCICI_LOGIN_PROFILE`，后者优先于文件 `use`；首次登录默认 `dev`。环境名只允许字母、数字、下划线和连字符，保留字段 `use` 不可作为环境名。同一部署的不同组织可用不同环境名称保存，不能根据 Client ID 猜测组织。
 
 ```bash
 python3 /技能绝对路径/scripts/agentcici_auth.py login --env uat

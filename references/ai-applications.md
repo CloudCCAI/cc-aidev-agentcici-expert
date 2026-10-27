@@ -32,11 +32,11 @@
 
 ## 包内协议与兼容
 
-外层 `format=agentcici-application-request`；不含CRM业务资源时为formatVersion=1，含对象/字段/类时为formatVersion=2。含 application.json、单个 site.zip（根层index.html）、自定义智能体 agents/<ref>.ciciagent、独立技能 skills/<ref>.zip。新清单入口代码写入 installationManifest.steps；仅旧menu格式额外生成 cloudcc/menu.json。sha256覆盖所有外层文件，application.json自身除外，原生包字节不变。
+外层 `format=agentcici-application-request`；含对象/字段/类必须为formatVersion=2。不含CRM业务资源时默认兼容formatVersion=1，也可显式formatVersion=2并声明空cloudccResources；不能仅凭版本号推断资源是否完整。含 application.json、单个 site.zip（根层index.html）、自定义智能体 agents/<ref>.ciciagent、独立技能 skills/<ref>.zip。新清单入口代码写入 installationManifest.steps；仅旧menu格式额外生成 cloudcc/menu.json。sha256覆盖所有外层文件，application.json自身除外，原生包字节不变。
 
-平台智能体使用可选platformAgent={ref}，agents为空；不打包它已有的托管技能/知识库。不需要智能体时agents为空且无platformAgent。自定义智能体仍完整校验导出依赖映射，不支持工具依赖或托管技能伪造导出。知识库定义至少ref/name，客户文档不随包上传。
+平台智能体使用可选platformAgent={ref}，agents为空；不打包它已有的托管技能/知识库。不需要智能体时agents为空且无platformAgent。自定义智能体完整校验技能、知识和工具的导出依赖映射；工具按已支持的MCP/内置声明映射，托管技能使用显式托管绑定，不用伪造原生包。知识库定义至少ref/name，客户文档不随包上传。
 
-旧源清单web.directory、agents/skills/knowledgeBases/menu仍可打包；新应用只使用schemaVersion=2。新源清单appType=web，不接受开发者自行声明官方发布身份。官网身份由平台管理员创建草稿时确定。
+旧源清单web.directory、agents/skills/knowledgeBases/menu保留兼容；旧menu重新打包须显式提供sdkUrl或functioncode，不默认指向UAT。新应用只使用schemaVersion=2。新源清单appType=web，不接受开发者自行声明官方发布身份。官网身份由平台管理员创建草稿时确定。
 
 ## 发布与安装
 
@@ -117,3 +117,7 @@ python3 /installed/agentcici/scripts/agentcici_application.py delete APP_CODE --
 ### V2安装步骤数量（1.7.7）
 
 V2应用不再设置120项或其他固定的安装步骤总数上限；按实际对象、字段、类和入口完整声明，禁止为绕过数量限制删减资源或拆散依赖。保留非空清单、资源类型/路径/摘要、重复API名、依赖存在性及无环校验，包体和清单大小限制仍适用。V1的30步兼容上限不变。目标AgentCiCi与CRM setup-service均需部署取消V2数量上限的版本；仅更新本机打包技能不能解除旧服务的限制。
+
+## 纯Web/AI/MCP应用使用V2
+
+用户要求统一V2交付时，源清单显式设置`formatVersion: 2`和`cloudccResources: []`。空数组表示不安装对象、字段或类，不能添加空壳资源触发版本。仍保留标准Web入口、智能体和MCP依赖映射、摘要及完整安装清单；接收端须支持无CRM业务资源的V2包。未显式指定且没有业务资源的旧清单继续生成V1。

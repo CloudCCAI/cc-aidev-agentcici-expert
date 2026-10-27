@@ -139,6 +139,28 @@ class AuthTest(unittest.TestCase):
             self.assertEqual(auth.config_path(), self.path)
             self.assertEqual(Client().client_id, 'client')
 
+    def test_application_login_creates_shared_root_config_from_nested_working_directory(self):
+        child = self.path.parent / 'applications' / 'test-app' / 'cloudcc'
+        child.mkdir(parents=True)
+        with patch.dict(os.environ, {}, clear=True), patch.object(Path, 'cwd', return_value=child):
+            self.assertEqual(auth.config_path(), self.path)
+            self.save()
+        self.assertTrue(self.path.is_file())
+        self.assertFalse((child / auth.CONFIG_NAME).exists())
+        self.assertFalse((child.parent / auth.CONFIG_NAME).exists())
+
+    def test_legacy_application_identity_is_not_silently_selected(self):
+        child = self.path.parent / 'applications' / 'test-app' / 'src'
+        child.mkdir(parents=True)
+        old = child.parent / auth.CONFIG_NAME
+        old.write_text('{}')
+        with patch.dict(os.environ, {}, clear=True), patch.object(Path, 'cwd', return_value=child):
+            with self.assertRaisesRegex(RuntimeError, '应用内旧登录配置'):
+                auth.config_path()
+        with patch.dict(os.environ, {'AGENTCICI_CONFIG_PATH': str(old)}, clear=True):
+            self.assertEqual(auth.config_path(), old.resolve())
+        self.assertEqual(old.read_text(), '{}')
+
     def test_new_project_uses_current_directory_and_dev(self):
         with patch.dict(os.environ, {}, clear=True), patch.object(Path, 'cwd', return_value=self.path.parent):
             self.assertEqual(auth.config_path(), self.path)

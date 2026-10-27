@@ -78,16 +78,16 @@ python3 /installed/agentcici/scripts/agentcici_manage.py agents delete AGENT_ID 
 
 ```bash
 python3 /installed/agentcici/scripts/agentcici_manage.py agents get AGENT_ID
-python3 /installed/agentcici/scripts/agentcici_manage.py agents create-api-key AGENT_ID --json '{"name":"短期联调","keyType":"standard","scopes":["chat"],"maxPromptChars":64000,"maxResponseChars":128000,"expiresAt":"2026-10-23T00:00:00Z"}' --output /私密目录/agent-key.json
+python3 /installed/agentcici/scripts/agentcici_manage.py agents create-api-key AGENT_ID --json '{"name":"短期联调","keyType":"standard","scopes":["chat"],"maxPromptChars":64000,"maxResponseChars":128000}' --output /私密目录/agent-key.json
 python3 /installed/agentcici/scripts/agentcici_manage.py agents revoke-api-key AGENT_ID CREDENTIAL_ID --confirm-id CREDENTIAL_ID
 ```
 
-按实际联调时间设置未来过期时间，不照抄示例日期。创建前回读目标智能体，确认组织、ID、用途；需要运行时核对已发布版本和 API 渠道，不擅自发布或修改渠道。撤销前核对目标 credential ID 和所属智能体；用户已授权的测试清理无需再次询问。
+需要短期Key时按实际联调时间补充未来的expiresAt，不使用固定示例日期；省略过期值不代表短期联调Key会自动失效。创建前回读目标智能体，确认组织、ID、用途；需要运行时核对已发布版本和 API 渠道，不擅自发布或修改渠道。撤销前核对目标 credential ID 和所属智能体；用户已授权的测试清理无需再次询问。
 
 创建响应包含 `credential` 和只返回一次的 `plainKey`。CLI 必须指定 `--output`，以独占创建、POSIX `0600` 权限保存完整响应，已有文件不覆盖；终端只输出文件路径和 `credentialId`。输出必须位于仓库/发布目录外的私密目录或已明确忽略且不参与打包的位置，不把 Key 放入命令参数、日志、回答或发布包。自动联调也可通过 Python `Client` 在进程内接收结果并于 finally 撤销，不需要落盘。临时 Key 验证后撤销，删除本机明文文件不等于撤销远端 Key。
 
 创建发生超时或保存失败时，结果可能未知，停止且通过后台核对，不能自动重试以免重复生成 Key；输出文件可能为空或不完整。404 可能为接口未部署或资源不可见，先用 `agents get` 区分；401/403 是登录或权限问题，不能据此断言接口不存在。当前管理接口没有列出 Key 的命令，不杜撰列表接口。
 
-### 1.7.0 验证记录（2026-10-22）
+## 验证边界
 
-本地 `python3 -m unittest discover -s scripts -p 'test_*.py'`：87 项通过，覆盖私密文件权限、不覆盖、摘要脱敏、创建异常不重试、撤销 ID 确认。UAT `https://uat.agentcici.com` 使用已发布 `smart-form-input-app-agent` 实际创建临时 Key（credential ID 85）：私密输出文件权限 0600，`GET /openapi/v1/parameters` 返回 200；撤销返回 `revoked: true`，同 Key 再请求返回 401。临时明文文件已清理，未发起模型生成。此结果仅证明该环境与当前凭据的权限可用，不代表其他环境已部署。
+本地测试只能证明参数、私密文件处理和调用顺序；创建/撤销接口、运行鉴权和实际额度须在目标环境按用户授权核验。历史环境的成功记录不能证明其他组织或新部署可用，不将固定credential ID、智能体ID或过期时间作为通用示例。

@@ -15,7 +15,7 @@ def fixture(root):
     skill = app.zip_bytes({'manifest.json': app.encode({'format': 'universal-skill-package', 'formatVersion': '1.0'}), 'SKILL.md': b'# Birthday'})
     (root / 'agent.ciciagent').write_bytes(agent)
     (root / 'skill.zip').write_bytes(skill)
-    config = {'appCode': 'birthday-mail', 'name': '生日邮件', 'version': '1.0.0', 'web': {'directory': 'web/dist'}, 'skills': [{'ref': 'writer', 'file': 'skill.zip'}], 'agents': [{'ref': 'assistant', 'file': 'agent.ciciagent', 'skillBindings': {'skill-1': 'writer'}, 'knowledgeBindings': {}}], 'knowledgeBases': [], 'menu': {'tabName': '生日邮件', 'pname': 'birthdaymail', 'type': 'script'}}
+    config = {'appCode': 'birthday-mail', 'name': '生日邮件', 'version': '1.0.0', 'web': {'directory': 'web/dist'}, 'skills': [{'ref': 'writer', 'file': 'skill.zip'}], 'agents': [{'ref': 'assistant', 'file': 'agent.ciciagent', 'skillBindings': {'skill-1': 'writer'}, 'knowledgeBindings': {}}], 'knowledgeBases': [], 'menu': {'tabName': '生日邮件', 'pname': 'birthdaymail', 'type': 'script', 'sdkUrl': 'https://service.example.test/sdk/agentcici-app@1.1.0.js'}}
     (root / 'application.json').write_text(json.dumps(config))
     return config
 
@@ -79,6 +79,18 @@ class PackageTest(unittest.TestCase):
         self.build()
         files = app.read_zip((self.root / 'release.zip').read_bytes())
         self.assertIn(self.config['menu']['sdkUrl'], json.loads(files['cloudcc/menu.json'])['functioncode'])
+
+    def test_legacy_menu_requires_explicit_sdk_and_rejects_credential_urls(self):
+        self.config['menu'].pop('sdkUrl')
+        (self.root / 'application.json').write_text(json.dumps(self.config))
+        with self.assertRaisesRegex(ValueError, '显式sdkUrl'):
+            self.build()
+        for url in ('https://user:secret@example.test/sdk.js', 'https://example.test/sdk.js?token=secret', 'http://remote.test/sdk.js'):
+            self.config['menu']['sdkUrl'] = url
+            (self.root / 'application.json').write_text(json.dumps(self.config))
+            with self.assertRaisesRegex(ValueError, 'SDK地址'):
+                self.build()
+        self.assertFalse((self.root / 'release.zip').exists())
 
     def test_rejects_tampering_and_unlisted_file(self):
         self.build()

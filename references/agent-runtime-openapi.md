@@ -64,3 +64,9 @@ curl -X POST "${AGENTCICI_API_BASE%/}/chat-messages" \
 ## 发布与凭据相互独立
 
 开启 API 渠道即可满足发布入口条件，不要求先创建 Key。未发布的智能体也可创建 Key，开发者管理接口仍检查智能体存在及 OPENAPI 权限。创建 Key 不会自动发布或开启渠道；实际调用仍需要满足运行端的鉴权、发布及渠道条件。
+
+## 标准Key携带当前CRM会话（需服务端支持）
+
+需要按当前CRM用户执行MCP的普通应用仍使用standard Key。部署支持后，在chat-messages请求体传`cloudccContext: {accessToken, baseUrl, readPageInfo: false}`，`user`取当前CRM userId；不得把Token放入query、metadata、URL或日志。后端要求Key所属租户启用CRM集成且配置orgId/网关，验证请求网关与配置一致、实时CRM用户与user一致、CRM组织与配置一致后，仅在本次MCP调用期间注入会话。Key的运行身份、授权、计费归属保持；不会借用管理员或开发Token。旧环境返回cloudcc_context_not_allowed时升级服务端，不改用cloudcc专用Key绕过。
+
+0.3.0智能分析前端还要求blocking响应metadata.runtime.toolCallCount提供本轮服务端工具执行计数；缺失时不展示ready数据。此计数表示执行过工具，不代替具体工具成功、权限和数据完整性验收。

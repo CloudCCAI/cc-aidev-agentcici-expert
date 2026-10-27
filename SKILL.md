@@ -1,13 +1,13 @@
 ---
 name: cc-aidev-agentcici-expert
 metadata:
-  version: "1.7.8"
+  version: "1.8.1"
 description: 使用开发者密钥管理 AgentCiCi 组织内智能体、技能、知识库和 MCP 服务，发现并读取 MCP 工具后关联智能体；指导第三方 Web AI 应用开发、CloudCC 自定义对象与自定义类开发、站点与脚本菜单集成，并将前端产物、原生智能体包和技能包整理为发布申请 ZIP 并提交到已部署的接收接口。用于平台资源管理、应用开发与申请包准备；自动安装须先核对服务端能力。
 ---
 
 # AgentCiCi 平台管理
 
-当前技能版本：`1.7.8`。
+当前技能版本：`1.8.1`。
 
 本 Skill 同时服务两个阶段：设计阶段先理解模块职责与边界，实施阶段再调用明确的管理 API。不要在不了解现有资源的情况下直接写入。
 
@@ -82,7 +82,7 @@ cloudcc doc fields devguide
 
 ## AI 应用项目组织
 
-默认在一个项目根目录下，用 `applications/<appCode>/` 管理多个应用；新建首个应用也采用此结构。每个应用独立维护 `application.json`、源码、构建和发布产物，根目录共用 `cloudcc-agentcici.config.json`、`cloudcc-cli.config.json` 和 `.cloudcc-cache.json`，多个应用不分别配置CRM凭据；源码、对象定义和文档仍在各自应用内。CRM类操作使用 [共用配置适配入口](references/cloudcc-shared-config.md)，不通过切换代码目录来迁就配置路径。详细目录、路径解析、Git 忽略及已有项目处理规则见 [项目与多应用目录](references/application-manifest.md#项目与多应用目录)。开始开发应用前读取该节；遵循用户明确指定的结构，不自动迁移已有项目，不把业务文件放入技能安装目录。
+AI 应用开发的工作目录固定在 `applications/<appCode>/`；新建首个应用也采用此结构。不要求读取或修改 AgentCiCi 平台 backend/frontend/deploy 源码，不把平台维护列为应用开发前置步骤。每个应用独立维护 `application.json`、源码、构建和发布产物，根目录共用 `cloudcc-agentcici.config.json`、`cloudcc-cli.config.json` 和 `.cloudcc-cache.json`，多个应用不分别配置CRM凭据；源码、对象定义和文档仍在各自应用内。所有 CloudCC 资源放应用 `cloudcc/`，类源码为 `cloudcc/backend/classes/<ClassName>/`。CRM类操作使用 [共用配置适配入口](references/cloudcc-shared-config.md)，以应用 cloudcc 为CLI工程根，临时引用根共享配置；不向项目根创建 backend 类目录或搬移用户源码。详细目录、路径解析、Git 忽略及已有项目处理规则见 [项目与多应用目录](references/application-manifest.md#项目与多应用目录)。开始开发应用前读取该节；遵循用户明确指定的结构，不自动迁移已有项目，不把业务文件放入技能安装目录。
 
 ## 应用入口与安装职责
 
@@ -116,7 +116,7 @@ script.src = url.href;
 
 - Base64 解码后是三项 export 声明，脚本按数据解析，绝不 source/eval/执行它。
 - 登录先调用 `/openapi/v1/developer/token` 验证，成功才将解码后的 `baseUrl`、`clientId`、`clientSecret` 直接保存到项目 `cloudcc-agentcici.config.json`；顶层 `use` 选择环境，每个环境独立保存凭据，不依赖系统钥匙串。
-- 配置从当前目录向父级查找最近文件；未找到时登录在当前目录创建。可用 `AGENTCICI_CONFIG_PATH` 指定完整路径。操作前确保工作目录或显式路径指向用户目标项目，不在技能安装目录保存业务凭据。
+- 在 applications/<appCode> 内执行时固定使用主项目根配置，首次登录也在根创建；发现应用内旧配置先报冲突，不静默选用。其他资源管理工作目录沿父级查找最近配置，无则在当前目录创建。可用 `AGENTCICI_CONFIG_PATH` 指定完整路径。操作前确保工作目录或显式路径指向用户目标项目，不在技能安装目录保存业务凭据。
 - `login --env uat` 保存并切换到该环境，`use uat` 切换已有环境；不指定时沿用当前环境，首次为 `dev`。`AGENTCICI_LOGIN_PROFILE` 可覆盖文件 `use`，认证命令 `--env` 优先级最高。
 - 管理与应用提交命令自动读取同一配置并换取短期 Token，Token 只在进程内缓存。`status` 不输出 Secret；`logout --env uat` 仅移除该环境，不撤销服务端凭据。
 - 保存时设置 POSIX 文件权限 `0600`，自动将配置及临时文件加入同目录 `.gitignore`；真实配置不提交、不打包、不回显。旧 `login.json` / `login-*.json` 及钥匙串不自动迁移，重新 login 写入新格式。

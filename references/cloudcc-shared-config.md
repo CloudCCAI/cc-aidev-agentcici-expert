@@ -1,21 +1,28 @@
-# 多应用共用CRM配置，源码保留在应用内
+# 应用 cloudcc 工程与根目录共用配置
 
-## 文件职责
+## 目录和职责
 
-项目根目录只保存一份 cloudcc-cli.config.json 和一份 .cloudcc-cache.json，多应用共用；AgentCiCi的cloudcc-agentcici.config.json也位于根目录。CLI配置/缓存不再放入每个应用，不复制或定期同步多份凭据。对象定义、自定义类、Web、需求设计和测试文档继续位于 applications/<appCode>/ 内。
+应用开发只在 `applications/<appCode>/` 进行。CloudCC 资源集中在应用 `cloudcc/`：类源码为 `cloudcc/backend/classes/<ClassName>/`，对象/字段等定义为 `cloudcc/metadata/`，相关工具为 `cloudcc/scripts/`。不需要 AgentCiCi 平台源码、根 backend/frontend/deploy 工程，也不向这些目录写入类或临时映射。
 
-CloudCC CLI当前将配置、缓存与类源码定位绑定到projectPath：配置/缓存位于projectPath根，类位于projectPath/backend/classes。create classes则直接使用当前工作目录创建源码，不能靠增加一个位置参数改变目录。因此不能将所有类命令直接改成在项目根目录执行，否则会把类代码创建到根目录。
+项目根目录共享 `cloudcc-agentcici.config.json`、`cloudcc-cli.config.json` 和 `.cloudcc-cache.json`。前者用于 AgentCiCi 管理；后两者由 CloudCC CLI 管理 CRM 环境和身份。配置与缓存不提交、不打包，不在应用内维护副本。
 
-本技能提供agentcici_cloudcc_class.py适配入口，不修改CloudCC CLI：
+CloudCC CLI 按 `<projectPath>/backend/classes` 定位类；本技能把应用 `cloudcc/` 作为类操作的 projectPath。`create classes` 使用工作目录，format/validate/publish 同时显式传入此工程根。类目录和类级 `config.json` 由 CLI 维护，只编辑源码 SOURCE 区域。
 
-- create：在应用工作目录调用CLI创建backend/classes/<ClassName>，不需要在应用内放CRM配置。
-- format/validate/publish：短暂将根目录backend/classes/<ClassName>映射到应用内的真实类目录，CLI以项目根目录为projectPath，从根读取/刷新配置与缓存，对映射中的应用源码执行原生操作。类级config.json的远端ID和版本仍由CLI写回应用内。
-- 执行结束（包括普通失败）在finally中清理临时映射和本次创建的空目录；不移动、复制类代码或凭据，不覆盖根目录既有同名资源。被强制终止时可能留下映射，再次运行会报路径冲突；确认无操作在运行且链接目标为该应用后，只清理残留符号链接，不删除链接目标。
-- 必须保持本机文件系统支持符号链接；平台不支持或拒绝创建时明确报错，不回退到复制配置/缓存或搬迁代码。多个应用使用不同业务类API Name；正在使用同名映射时拒绝并发覆盖。
+## 共用配置适配器
+
+使用 `scripts/agentcici_cloudcc_class.py`，不修改 CloudCC CLI：
+
+1. 确认应用目录和根 CRM 配置存在，拒绝越出应用的目录/文件链接，不覆盖已有类。
+2. 为同一项目取得系统临时目录中的进程锁；锁文件不含凭据，避免多个适配操作并发刷新共用缓存。已有独立 CLI 操作也应避免同时切换该项目环境。
+3. 在应用 cloudcc/ 下临时创建指向根配置及根缓存的符号链接。它们是本次操作的引用，不是凭据副本；执行结束后清理。根缓存尚未生成时使用悬空链接，由 CLI 首次写入真实缓存，不伪造身份。
+4. CLI 在 cloudcc/ 内操作真实类源码。若刷新时删除链接并重建缓存，把 CLI 新文件移动回根缓存；若 CLI 删除后未重建，清除根旧缓存，避免继续使用失效 Token。不会合并另一环境的缓存身份。
+5. 正常完成、CLI返回失败、进程启动异常时均执行清理。平台不支持或拒绝符号链接时明确失败，不回退到复制凭据。被强制终止可能留下链接；确认没有进程运行且目标确为根配置后，只清理残留链接，不删除链接目标。
+
+已有应用 cloudcc/ 内配置、缓存或链接一律报告冲突，不擅自覆盖；先核对环境并归并到根配置。同名环境不一致时明确处理。旧应用 `backend/classes` 布局不自动搬迁，也不为同名类再创建一份；用户确认规范化后再统一所有引用。
 
 ## 使用方式
 
-下列路径按用户项目和已安装技能位置替换，不使用全局CLI：
+在目标应用目录调用安装技能的绝对脚本路径；下面 /project 和 /installed 是路径占位：
 
 ```bash
 python3 /installed/agentcici/scripts/agentcici_cloudcc_class.py \
@@ -28,27 +35,22 @@ python3 /installed/agentcici/scripts/agentcici_cloudcc_class.py \
 
 python3 /installed/agentcici/scripts/agentcici_cloudcc_class.py \
   --cli /installed/cloudcc/tools/bin/cloudcc \
+  --root /project --app story-expander format StoryService --check
+
+python3 /installed/agentcici/scripts/agentcici_cloudcc_class.py \
+  --cli /installed/cloudcc/tools/bin/cloudcc \
   --root /project --app story-expander publish StoryService
 ```
 
-format使用相同入口，可显式--write/--check，缺省只检查。创建前仍须先读资源介绍和开发指南，不覆盖已有类；代码仅编辑应用内SOURCE区域。发布是实际开发组织写操作，须在本次开发授权范围内执行；本地验证成功不代表发布或CRM业务联调成功。
+create/format --write/publish 会产生相应本地或远程写入，必须在用户授权范围内；validate 是真实平台 SDK 本地编译，不等于 CRM 发布或业务验收。format 缺省只检查。测试只需本地编译时不运行 publish。
 
-对象、字段、provider诊断、环境切换和OpenAPI等不依赖应用类目录的操作，直接使用安装CLI，按各命令的参数顺序明确传项目根目录。比如：
+对象/字段等不依赖类源码位置的操作，仍显式用根配置路径；定义文件在应用内，CLI从目标应用工作目录调用即可：
 
 ```bash
 /installed/cloudcc/tools/bin/cloudcc doctor provider /project
-/installed/cloudcc/tools/bin/cloudcc use config dev /project
 /installed/cloudcc/tools/bin/cloudcc plan msapi /project fields @/project/applications/story-expander/cloudcc/metadata/content.json create
 /installed/cloudcc/tools/bin/cloudcc apply msapi /project PLAN_ID
 /installed/cloudcc/tools/bin/cloudcc get fields /project OBJECT_API_NAME
 ```
 
-`PLAN_ID` 替换为本次返回的真实计划 ID，`OBJECT_API_NAME` 替换为字段定义所属的对象 API 名；核对计划后执行 apply，再回读字段。plan只是计划，真实执行继续按专用技能apply规则。元数据输入文件可位于应用内，使用绝对路径，不能因配置位于根目录就移动定义。应用打包继续从该应用目录读取资源，不需要从根目录跨界导入源码。
-
-## 启动、本地联调与已有项目
-
-- 启动时先确定用户项目根目录，分别核对两套配置的use、地址、组织和身份；它们是不同产品的凭据，不能互换或仅凭环境名相同视为同一身份。启动/调试进程从根目录.cloudcc-cache.json按当前CRM配置选取accessToken；CLI刷新仍写回根目录。
-- 所有应用共享CRM当前环境，切换根配置use会影响后续所有应用。一次联调保持明确的环境，不并发切换同一配置；不要同时运行会互相覆盖同一根缓存的刷新操作。
-- 根.gitignore排除cloudcc-cli.config.json、.cloudcc-cache.json和cloudcc-agentcici.config.json。配置与缓存设为本机受限权限；根目录临时类映射不提交、不打包，CLI退出后检查已清理。
-- 旧项目若凭据在应用内，先确认项目根与现有两边环境；根缺配置时归并到根；已有配置时合并不冲突环境，同名环境值冲突必须明确处理，不能覆盖。验证根配置后再移除已归并的应用内凭据，代码及类级config.json不移动。缓存按CLI机制在根重建，无需合并旧Token，不为迁移伪造或改写缓存身份。
-- 不因本技能更新自动查找或搬迁用户其他项目的真实配置。只有操作具体项目时按上述规则归并，缺少路径或存在身份冲突时说明具体问题。
+按安装的 CloudCC 专用技能先读资源介绍和指南；plan 不是实际创建，apply 后回读。AgentCiCi 与 CRM 配置的 use 独立，先核对实际地址/组织；不因同为 uat 就混用身份。CRM 缓存缺失或失效由 CLI 正规刷新，开发联调按当前环境安全标记选择 accessToken，不取缓存第一项。根凭据和缓存保持本机受限权限，Git 忽略应用内临时同名链接；打包器拒绝包含这些文件或链接的站点/资源。
