@@ -12,7 +12,11 @@
 - 开发 AI Web 应用，生成 CloudCC 菜单、按钮或全局入口。
 - 准备、校验和提交 AI 应用发布申请包。
 
-当前版本：`1.8.1`
+当前版本：`1.8.2`
+
+## 1.8.2 更新说明
+
+- GitHub仓库迁移为 `CloudCCAI/cc-aidev-agentcici-expert`，安装地址与repo参数统一使用新地址；技能名和安装目录保持一致。
 
 ## 1.8.1 更新说明
 
@@ -30,9 +34,9 @@
 
 把本仓库地址发给 Codex，然后说：
 
-> 请从 https://github.com/CloudCCAI/cc-aidev-agent-guidelines-common 的仓库根目录安装技能，安装目录名指定为 cc-aidev-agentcici-expert；已有安装按当前工具的升级流程处理，保留环境配置。
+> 请从 https://github.com/CloudCCAI/cc-aidev-agentcici-expert 的仓库根目录安装技能，安装目录名指定为 cc-aidev-agentcici-expert；已有安装按当前工具的升级流程处理，保留环境配置。
 
-使用 Codex 的 `skill-installer` 首次安装时，向其 `scripts/install-skill-from-github.py` 传入 `--repo CloudCCAI/cc-aidev-agent-guidelines-common --path . --name cc-aidev-agentcici-expert`。执行时使用安装器的实际绝对路径；目标已存在时不要直接重复首次安装命令，也不要清空配置。其他AI工具同样保留该技能目录名。仓库名与技能名不同，不按仓库名推导安装目录。
+使用 Codex 的 `skill-installer` 首次安装时，向其 `scripts/install-skill-from-github.py` 传入 `--repo CloudCCAI/cc-aidev-agentcici-expert --path . --name cc-aidev-agentcici-expert`。执行时使用安装器的实际绝对路径；目标已存在时不要直接重复首次安装命令，也不要清空配置。其他AI工具同样保留该技能目录名。仓库名与技能名统一为cc-aidev-agentcici-expert，安装时仍显式指定目录名。
 
 安装后，可以显式指定 Skill：
 
