@@ -1,13 +1,13 @@
 ---
 name: cc-aidev-agentcici-expert
 metadata:
-  version: "1.8.3"
+  version: "1.8.4"
 description: 使用开发者密钥管理 AgentCiCi 组织内智能体、技能、知识库和 MCP 服务，发现并读取 MCP 工具后关联智能体；指导第三方 Web AI 应用开发、CloudCC 自定义对象与自定义类开发、站点与脚本菜单集成，并将前端产物、原生智能体包和技能包整理为发布申请 ZIP 并提交到已部署的接收接口。用于平台资源管理、应用开发与申请包准备；自动安装须先核对服务端能力。
 ---
 
 # AgentCiCi 平台管理
 
-当前技能版本：`1.8.3`。
+当前技能版本：`1.8.4`。
 
 本 Skill 同时服务两个阶段：设计阶段先理解模块职责与边界，实施阶段再调用明确的管理 API。不要在不了解现有资源的情况下直接写入。
 
@@ -43,7 +43,6 @@ AI 应用涉及新建或修改 CloudCC 自定义类、对象、字段时，必�
 - 检查当前工具的技能目录：必须有该技能的 `SKILL.md` 和可运行的 `tools/bin/cloudcc`。Codex 使用 `${CODEX_HOME:-$HOME/.codex}/skills/cc-customization-expert-msapi`；其他工具使用其实际技能目录，不把项目源码目录视为已安装。
 - 未安装时，先从上述仓库安装完整技能包，再读取其 `SKILL.md` 并运行包内 `tools/bin/cloudcc --version`。Codex 优先使用 `skill-installer` 的 `scripts/install-skill-from-github.py --repo CloudCCAI/cc-customization-expert-msapi --path . --name cc-customization-expert-msapi`；仓库根目录就是技能根目录，不能只下载 `SKILL.md`。其他工具使用自身支持的技能安装方式。已安装时复用，不覆盖现有技能或环境配置；安装不完整时报告缺失项。
 - **设计前先获取文档**：涉及自定义类、对象或字段时，必须先执行下列对应资源的两条命令，读取 `introduction`（资源介绍）和 `devguide`（开发指南），再进行该资源的设计、定义或源码生成。涉及多类资源时，逐类读取两份文档；不能先设计后补读，也不能等到开发或发布前才读。这里的 `cloudcc` 指已安装专用技能内的 `tools/bin/cloudcc`，实际调用使用该程序的绝对路径，不依赖全局 CLI。
-- 同时遵守 CloudCC 技能要求的平台能力文档和按需文档，例如类调用外部 HTTP 前读取 `platform/apiRegistrar devguide`。按文档确认 API Name、字段类型/约束/关系、类结构、平台 SDK、权限与校验规则；修改前回读实际资源。
 - 技能安装失败、CLI 不可运行或对应文档无法读取时，不继续猜测并生成这些资源；说明具体缺失，仍可继续不依赖这些资源的前端工作。
 
 设计前按资源类型执行：
@@ -66,7 +65,7 @@ cloudcc doc fields devguide
 
 ## 第三方 Web 应用开发规范
 
-应用使用原生 Web（HTML、CSS、JavaScript）开发，交付可部署的静态前端。 **AI 应用 UI 不得使用或依赖 CloudCC CRM 自定义页面（customPage/VisualPage）和自定义组件（pagecomponent/customComponent）。** 所有页面、表单、列表及交互均在 Web 前端中实现，通过本技能规定的宿主 SDK 以 iframe 或 Shadow DOM 挂载。菜单、按钮只负责调用 SDK 启动 Web，不跳转 injectionComponent 等自定义页面路由；整理旧应用时必须将这类入口改为标准 Web 入口。业务按需采用两条调用链，可在同一应用中组合：
+应用使用原生 Web（HTML、CSS、JavaScript）开发，交付可部署的静态前端。 **AI 应用 UI 不得使用或依赖 CloudCC CRM 自定义页面（customPage/VisualPage）和自定义组件（pagecomponent/customComponent）。** 所有页面、表单、列表及交互均在 Web 前端中实现，通过本技能规定的宿主 SDK 以 iframe 或 Shadow DOM 挂载。菜单、按钮只负责调用 SDK 启动 Web，不跳转 injectionComponent 等自定义页面路由；业务按需采用两条调用链，可在同一应用中组合：
 
 - **Web → 自定义类 → 自定义对象**：由 CloudCC 提供数据存储、业务逻辑和权限校验。
 - **Web → Agent（智能体）**：通过宿主 SDK 获取运行上下文，调用已发布智能体的运行 OpenAPI；按 [运行接口规范](references/agent-runtime-openapi.md) 处理鉴权、会话与流式响应。
@@ -82,7 +81,7 @@ cloudcc doc fields devguide
 
 ## AI 应用项目组织
 
-AI 应用开发的工作目录固定在 `applications/<appCode>/`；新建首个应用也采用此结构。不要求读取或修改 AgentCiCi 平台 backend/frontend/deploy 源码，不把平台维护列为应用开发前置步骤。每个应用独立维护 `application.json`、源码、构建和发布产物，根目录共用 `cloudcc-agentcici.config.json`、`cloudcc-cli.config.json` 和 `.cloudcc-cache.json`，多个应用不分别配置CRM凭据；源码、对象定义和文档仍在各自应用内。所有 CloudCC 资源放应用 `cloudcc/`，类源码为 `cloudcc/backend/classes/<ClassName>/`。CRM类操作使用 [共用配置适配入口](references/cloudcc-shared-config.md)，以应用 cloudcc 为CLI工程根，临时引用根共享配置；不向项目根创建 backend 类目录或搬移用户源码。详细目录、路径解析、Git 忽略及已有项目处理规则见 [项目与多应用目录](references/application-manifest.md#项目与多应用目录)。开始开发应用前读取该节；遵循用户明确指定的结构，不自动迁移已有项目，不把业务文件放入技能安装目录。
+AI 应用开发的工作目录固定在 `applications/<appCode>/`；新建首个应用也采用此结构。不要求读取或修改 AgentCiCi 平台 backend/frontend/deploy 源码，不把平台维护列为应用开发前置步骤。每个应用独立维护 `application.json`、源码、构建和发布产物，根目录共用 `cloudcc-agentcici.config.json`、`cloudcc-cli.config.json` 和 `.cloudcc-cache.json`，多个应用不分别配置AgentCiCi和CRM凭据；源码、对象定义和文档仍在各自应用内。所有 CloudCC 资源放应用 `cloudcc/`，类源码为 `cloudcc/backend/classes/<ClassName>/`。CRM类操作使用 [共用配置适配入口](references/cloudcc-shared-config.md)，以应用 cloudcc 为CLI工程根，临时引用根共享配置；不向项目根创建 backend 类目录或搬移用户源码。详细目录、路径解析、Git 忽略及已有项目处理规则见 [项目与多应用目录](references/application-manifest.md#项目与多应用目录)。开始开发应用前读取该节；遵循用户明确指定的结构，不自动迁移已有项目，不把业务文件放入技能安装目录。
 
 ## 应用入口与安装职责
 
