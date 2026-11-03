@@ -50,7 +50,7 @@ connectedApplications是可选布尔开关，缺省为true，转换为requiresCo
 
 第三方应用以一个 Web 应用为主体，UI不使用或依赖CRM自定义页面和自定义组件；旧菜单中的injectionComponent等自定义页面入口必须改为标准SDK Web挂载入口。需要存储时提供自定义对象及字段定义，需要业务逻辑时提供自定义类源码；Web 按 [调用规范](web-app-development.md#web-调用自定义类) 请求类，由类操作对象。明确每项资源的 API Name 和依赖顺序，对象先于字段、依赖资源先于调用它们的类；内部 ID 由安装 org 解析，业务数据与凭据不打包。
 
-上文 `formatVersion=1` 和常用 `package` 命令描述现有 Web/AI 资源流程，不能据此声称已经打包业务资源。业务资源使用外层 `formatVersion=2`、`cloudccResources` 声明及 `installationManifest.schemaVersion=2`。执行前核对打包工具、发布接收端和 setup-svc 是否实际支持；技能打包器现支持从源清单cloudccResources读取object/field/class，写入v2包并验证资源白名单、路径、依赖和摘要；定义须遵循安装器允许的字段，不直接打包MetadataService plan或源org ID。服务端或setup-svc缺少支持时明确列出阻塞，不静默忽略资源。
+上文 `formatVersion=1` 和常用 `package` 命令描述现有 Web/AI 资源流程，不能据此声称已经打包业务资源。业务资源使用外层 `formatVersion=2`、`cloudccResources` 声明及 `installationManifest.schemaVersion=2`。执行前核对打包工具、发布接收端和 setup-svc 是否实际支持；技能打包器现支持从源清单cloudccResources读取object/field/class/trigger/timer/validationRule，写入v2包并验证资源白名单、路径、依赖和摘要；定义须遵循安装器允许的字段，不直接打包MetadataService plan或源org ID。服务端或setup-svc缺少支持时明确列出阻塞，不静默忽略资源。
 
 业务资源安装归入当前 AI 应用安装流程，由 setup-svc 的原生能力创建对象、字段和类；不依赖 MetadataService，也不复用传统软件包安装器。schemaVersion=2 使用安装计划与服务端操作状态，不能套用前述旧 `/install` 流程或首次失败自动删除规则。升级、恢复及清理以目标环境已提供的能力为准；不得推断可自动修改/删除已有结构与类源码，或删除客户业务数据。
 
@@ -68,7 +68,7 @@ connectedApplications是可选布尔开关，缺省为true，转换为requiresCo
 }
 ```
 
-对象JSON可用apiName/label/nameLabel/dataType/showFormat/beginIndex/remark；字段JSON可用apiName/objectApiName/label/fieldType/length/decimalPlaces/lookupObjectApiName/childrelationName/remark/maxFiles/imageInputMode。支持字段类型S/N/P/c/C/D/T/B/E/U/Y/M/F/X/J/A/H/IMG/FL，平台其他字段能力不等于本安装器已支持；关系字段必须有目标API名和childrelationName，数值精度按平台限制。开发定义超出此范围时明确列出差异，不擅自丢字段。类交付文件是通过CLI创建并验证后的SOURCE内容，保留开发目录中的原始CLI文件，不打包其config.json中的远端ID。
+对象JSON可用apiName/label/nameLabel/dataType/showFormat/beginIndex/remark/accessable/quickCreate/locationEnabled/reportable；字段JSON可用apiName/objectApiName/label/fieldType/length/decimalPlaces/lookupObjectApiName/childrelationName/remark/maxFiles/imageInputMode，以及下文配置参数。支持字段类型S/N/P/c/L/Q/D/T/B/E/U/Y/M/F/X/J/A/H/IMG/FL，平台其他字段能力不等于本安装器已支持；关系字段必须有目标API名和childrelationName，数值精度按平台限制。开发定义超出此范围时明确列出差异，不擅自丢字段。类交付文件是通过CLI创建并验证后的SOURCE内容，保留开发目录中的原始CLI文件，不打包其config.json中的远端ID。
 
 MCP和工具声明在mcpServers/tools，工具依赖用agent.tools中的bindingRef→ref映射，技能与知识依赖同样按原生导出ref映射。MCP/工具配置见 [MCP模块](mcp-tools.md)，不要把源服务响应（含认证字段）整段复制进发布清单。
 
@@ -111,7 +111,7 @@ python3 /installed/agentcici/scripts/agentcici_application.py delete APP_CODE --
 
 显式length/decimalPlaces必须为JSON整数，不传字符串或浮点数。J的MetadataService专属131072上限不适用于此安装链路。IMG/FL可传maxFiles整数1–10，默认1；IMG可传imageInputMode=input或url，默认input。maxFiles映射为原生defaultValue，FL同时设置isrepeat；图片录入方式映射formulaType。暂不打包引用公式、水印配置或真实附件内容。不同字段的属性不可混用。
 
-安装初始只给当前系统管理员字段权限；业务简档和受限财务字段需目标管理员按交付说明授权。L/Q/Z/V/MR/AD/LT/SCORE/加密文本尚未纳入此包协议；C虽在类型白名单，但完整累计汇总配置仍未交付，不以白名单通过代替可安装承诺。
+安装初始只给当前系统管理员字段权限；业务简档和受限财务字段需目标管理员按交付说明授权。Z/V/MR/AD/LT/SCORE/加密文本、全局选项引用、公式/汇总和查找筛选尚未纳入此包协议；不完整的累计汇总C明确拒绝。L/Q本地选项支持见下文。
 
 
 ### V2安装步骤数量（1.7.7）
@@ -121,3 +121,27 @@ V2应用不再设置120项或其他固定的安装步骤总数上限；按实际
 ## 纯Web/AI/MCP应用使用V2
 
 用户要求统一V2交付时，源清单显式设置`formatVersion: 2`和`cloudccResources: []`。空数组表示不安装对象、字段或类，不能添加空壳资源触发版本。仍保留标准Web入口、智能体和MCP依赖映射、摘要及完整安装清单；接收端须支持无CRM业务资源的V2包。未显式指定且没有业务资源的旧清单继续生成V1。
+
+
+## 资源配置参数（1.8.3）
+
+以下参数需要打包工具、AgentCiCi平台和CRM安装服务同时升级。旧包未声明时保持原行为；旧服务会拒绝未知参数，不能先发布新协议包后假设旧安装器能处理。
+
+| 资源 | 参数 | 类型与语义 |
+| --- | --- | --- |
+| 对象 | accessable | 字符串0专用、1公用只读、2公用读写，省略为0 |
+| 对象 | quickCreate/locationEnabled/reportable | JSON布尔，分别控制快速新建、定位和报表开关，省略为false |
+| 字段 | required | JSON布尔，映射原生requires |
+| 文本S/数字N/邮箱E | allowDuplicates | JSON布尔；false映射原生isrepeat=false，安装时创建原生不允许重复约束 |
+| 禁止重复的文本S | caseSensitive | JSON布尔，须同时声明allowDuplicates=false |
+| 普通标量字段 | defaultValue | 字符串；数字必须为十进制字符串，B复选框仅0或1；不用于关系、媒体和选项字段的重载配置 |
+| 字段 | helpText | 字符串，映射helps |
+| 文本S | placeholder | 字符串，输入提示 |
+| 本地单选L/多选Q | options | 必填、非空字符串数组，按数组顺序安装；不允许重复、首尾空白、换行、空值或源选项ID，每项最多255个UTF-16单元 |
+| 本地单选L/多选Q | defaultFirstOption | JSON布尔，默认false；true把第一项设为默认；不提供任意源选项ID |
+
+例如请求键字段声明`{"apiName":"request_key","objectApiName":"sm_entry","label":"请求键","fieldType":"S","length":255,"allowDuplicates":false,"required":false}`。安装后回读真实属性，不匹配报RESOURCE_CONFIGURATION_READBACK_MISMATCH；新属性纳入快照摘要，执行前漂移检查仍生效。历史包未声明的新属性不加入其快照，避免升级安装器造成旧回执漂移。
+
+本协议允许object/field/class/trigger/timer/validationRule；触发器需targetObjectApiName和triggerTime，原生SOURCE放cloudcc/backend/triggers；定时类SOURCE放cloudcc/backend/timers；验证规则JSON放cloudcc/metadata，含objectApiName/formulaText/errorMessage。它们沿用目标安装器现有权限与约束：触发器初始禁用，定时类不自动调度，在已有对象增加触发器或验证规则仍需维护窗口，不伪造自动升级能力。
+
+现有字段配置变化仍不支持自动升级，明确报UPGRADE_UNSUPPORTED；新装前把参数随包声明，已安装旧版的约束补配由管理员维护。权限/布局分配、公式和累计汇总、全局选项、查找筛选、选项依赖及多语言不接受源组织ID或未定义属性；按目标元数据设计另行交付，不静默删属性。纯Web/AI应用可显式V2并传空cloudccResources，与平台校验一致。

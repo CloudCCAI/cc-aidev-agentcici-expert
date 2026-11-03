@@ -1,0 +1,340 @@
+[
+  {
+    "kind": "object",
+    "valid": true,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "accessable": "2",
+      "quickCreate": true,
+      "reportable": false,
+      "locationEnabled": true
+    }
+  },
+  {
+    "kind": "object",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "accessable": 2
+    }
+  },
+  {
+    "kind": "object",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "reportable": "true"
+    }
+  },
+  {
+    "kind": "field",
+    "valid": true,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "S",
+      "required": false,
+      "allowDuplicates": false,
+      "caseSensitive": true,
+      "defaultValue": "A",
+      "helpText": "帮助",
+      "placeholder": "输入内容"
+    }
+  },
+  {
+    "kind": "field",
+    "valid": true,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "N",
+      "allowDuplicates": false,
+      "defaultValue": "12.50",
+      "decimalPlaces": 2,
+      "length": 16
+    }
+  },
+  {
+    "kind": "field",
+    "valid": true,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "L",
+      "options": [
+        "待处理",
+        "已完成"
+      ],
+      "defaultFirstOption": true
+    }
+  },
+  {
+    "kind": "field",
+    "valid": true,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "Q",
+      "options": [
+        "甲",
+        "乙"
+      ],
+      "defaultFirstOption": false
+    }
+  },
+  {
+    "kind": "field",
+    "valid": true,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "B",
+      "defaultValue": "1"
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "S",
+      "required": "false"
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "S",
+      "required": null
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "FL",
+      "allowDuplicates": false
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "S",
+      "caseSensitive": false
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "S",
+      "allowDuplicates": true,
+      "caseSensitive": false
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "L",
+      "options": [
+        "甲",
+        "甲"
+      ]
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "Q",
+      "options": [
+        "甲\n乙"
+      ]
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "L",
+      "options": [
+        " 甲"
+      ]
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "L",
+      "options": []
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "L",
+      "options": [
+        "甲"
+      ],
+      "defaultFirstOption": "1"
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "S",
+      "options": [
+        "甲"
+      ]
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "L",
+      "options": [
+        "甲"
+      ],
+      "defaultValue": "甲"
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "B",
+      "defaultValue": "true"
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "N",
+      "defaultValue": "NaN"
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "N",
+      "defaultValue": "1_000"
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "S",
+      "defaultValue": 1
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "Y",
+      "defaultValue": "foreign-id",
+      "lookupObjectApiName": "Account",
+      "childrelationName": "关联"
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "C"
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "N",
+      "placeholder": "金额"
+    }
+  },
+  {
+    "kind": "field",
+    "valid": false,
+    "payload": {
+      "apiName": "sample",
+      "label": "示例",
+      "objectApiName": "sample_object",
+      "fieldType": "S",
+      "helpText": null
+    }
+  }
+]
