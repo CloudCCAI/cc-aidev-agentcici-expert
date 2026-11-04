@@ -10,7 +10,7 @@ Agent API Key 可由有权限的开发者通过[管理命令](agents.md#运行-a
 
 - `apiBase` 是完整运行 API 基地址，包含 `/openapi/v1`。生产嵌入模式直接使用宿主 runtime 返回的 `context.apiBase`。
 - 本地测试在未提交的本地配置中提供完整 `apiBase`，例如 `http://127.0.0.1:8080/openapi/v1`；curl 示例中的 `AGENTCICI_API_BASE` 使用同样的完整地址。这与管理脚本使用的平台根地址 `AGENTCICI_BASE_URL` 不同。
-- 业务请求代码不得包含 `/openapi/v1` 字面量、前缀常量或补齐逻辑；只去掉 `apiBase` 末尾的斜杠，再拼接相对端点。不得提取 origin 或使用根路径覆盖 `apiBase` 已有路径。
+- 业务请求代码不得包含 `/openapi/v1` 字面量、前缀常量或补齐逻辑；只去掉 `apiBase` 末尾的斜杠，再拼接相对端点。HTTP 端点不得提取 origin 或使用根路径覆盖 `apiBase` 已有路径；语音 WebSocket 按服务端返回的 `websocketPath` 解析，见[实时语音输入](voice-input.md)。
 
 ```js
 const apiBase = context.apiBase.replace(/\/$/, '');
@@ -58,6 +58,7 @@ curl -X POST "${AGENTCICI_API_BASE%/}/chat-messages" \
 | 推荐问题 | `GET /messages/{messageId}/suggested` |
 | 上传文件 | `POST /files/upload` |
 | 导入远程文件 | `POST /files/import` |
+| 申请语音凭证 | `POST /voice-sessions?scene=voice-asr` |
 
 上传接口返回文件 `id` 后，在 `chat-messages.files[].upload_file_id` 中引用。文件类型、大小、模型能力或解析失败都应作为明确错误处理，不要静默忽略附件。
 
@@ -70,3 +71,7 @@ curl -X POST "${AGENTCICI_API_BASE%/}/chat-messages" \
 需要按当前CRM用户执行MCP的普通应用仍使用standard Key。部署支持后，在chat-messages请求体传`cloudccContext: {accessToken, baseUrl, readPageInfo: false}`，`user`取当前CRM userId；不得把Token放入query、metadata、URL或日志。后端要求Key所属租户启用CRM集成且配置orgId/网关，验证请求网关与配置一致、实时CRM用户与user一致、CRM组织与配置一致后，仅在本次MCP调用期间注入会话。Key的运行身份、授权、计费归属保持；不会借用管理员或开发Token。旧环境返回cloudcc_context_not_allowed时升级服务端，不改用cloudcc专用Key绕过。
 
 0.3.0智能分析前端还要求blocking响应metadata.runtime.toolCallCount提供本轮服务端工具执行计数；缺失时不展示ready数据。此计数表示执行过工具，不代替具体工具成功、权限和数据完整性验收。
+
+## 实时语音输入
+
+应用需要麦克风转文字时，读取[语音接入指南](voice-input.md)，按宿主身份刷新、audio权限、短期凭证与WebSocket握手接入；指南包含音频格式、转写拼接、停止清理和接入验收。语音只产生文字，发送智能体继续使用本教程的chat-messages。
