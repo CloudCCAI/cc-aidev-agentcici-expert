@@ -58,6 +58,82 @@ class PackageTest(unittest.TestCase):
         other = app.package(self.root / 'application.json', self.root / 'second.zip')
         self.assertEqual(result['sha256'], other['sha256'])
 
+    def test_skill_knowledge_dependencies_must_be_declared_by_name(self):
+        (self.root / 'knowledge/method').mkdir(parents=True)
+        (self.root / 'knowledge/method/source.md').write_text('资料')
+        self.config['knowledgeBases'] = [{'ref': 'method', 'name': '销售方法论', 'documents': ['knowledge/method/source.md']}]
+        (self.root / 'application.json').write_text(json.dumps(self.config))
+        original = app.read_zip((self.root / 'skill.zip').read_bytes())
+        for name, strategy, valid in [('销售方法论', 'byName', True), ('17', 'byName', False),
+                                       ('销售方法论', 'byId', False)]:
+            files = dict(original)
+            files['resources.json'] = json.dumps({'knowledgeBases': [{'name': name, 'matchStrategy': strategy}]}).encode()
+            (self.root / 'skill.zip').write_bytes(app.zip_bytes(files))
+            output = self.root / 'release.zip'
+            if valid:
+                self.build()
+                output.unlink()
+            else:
+                with self.assertRaisesRegex(ValueError, '技能知识库依赖'):
+                    self.build()
+                self.assertFalse(output.exists())
+
+    def test_duplicate_application_knowledge_names_are_rejected(self):
+        self.config['knowledgeBases'] = []
+        for ref, name in [('one', 'Sales'), ('two', 'sales')]:
+            path = 'knowledge/' + ref + '/source.md'
+            (self.root / path).parent.mkdir(parents=True)
+            (self.root / path).write_text('资料')
+            self.config['knowledgeBases'].append({'ref': ref, 'name': name, 'documents': [path]})
+        (self.root / 'application.json').write_text(json.dumps(self.config))
+        with self.assertRaisesRegex(ValueError, '知识库名称'):
+            self.build()
+
+    def test_knowledge_sources_preserve_bytes_and_reject_tampering(self):
+        path = 'knowledge/method/原文.md'
+        original = '原始资料\r\n销售'.encode()
+        (self.root / path).parent.mkdir(parents=True)
+        (self.root / path).write_bytes(original)
+        self.config['knowledgeBases'] = [{'ref': 'method', 'name': '销售方法论', 'documents': [path]}]
+        (self.root / 'application.json').write_text(json.dumps(self.config))
+        self.build()
+        files = app.read_zip((self.root / 'release.zip').read_bytes())
+        self.assertEqual(files[path], original)
+        self.assertEqual(app.validate(files)['sha256'][path], app.digest(original))
+        files[path] = b'tampered'
+        with self.assertRaises(ValueError):
+            app.validate(files)
+        del files[path]
+        with self.assertRaises(ValueError):
+            app.validate(files)
+
+    def test_new_packages_require_sources_for_every_knowledge_base(self):
+        self.config['knowledgeBases'] = [{'ref': 'method', 'name': '销售方法论'}]
+        (self.root / 'application.json').write_text(json.dumps(self.config))
+        with self.assertRaisesRegex(ValueError, '源文件声明'):
+            self.build()
+        self.assertFalse((self.root / 'release.zip').exists())
+
+    def test_schema_v2_compilation_keeps_knowledge_source_declarations(self):
+        import application_manifest
+        config = {'schemaVersion': 2, 'layoutVersion': 2, 'appCode': 'mentor',
+                  'name': '导师', 'version': '1.0.0', 'summary': '导师', 'appType': 'web',
+                  'outputDir': 'web/dist', 'entry': 'index.html', 'renderer': 'shadow-dom',
+                  'host': {'closeBehavior': 'hide', 'hostLayer': 'content'},
+                  'agent': {'type': 'custom', 'ref': 'mentor', 'file': 'agent.ciciagent',
+                            'skills': [], 'knowledges': [{'ref': 'method', 'name': '方法论',
+                            'bindingRef': 'kb-1', 'documents': ['knowledge/method/原文.md']}]}}
+        compiled = application_manifest.compile_manifest(config, self.root)
+        self.assertEqual(compiled['knowledgeBases'], config['agent']['knowledges'])
+        self.assertEqual(compiled['agents'][0]['knowledgeBindings'], {'kb-1': 'method'})
+
+    def test_rejects_knowledge_sources_outside_declared_library_or_unsafe(self):
+        for path in ['knowledge/other/a.md', 'knowledge/method/../a.md',
+                     'knowledge/method/.a.md', 'knowledge/method/a.exe']:
+            manifest = {'knowledgeBases': [{'ref': 'method', 'documents': [path]}]}
+            with self.subTest(path=path), self.assertRaises(ValueError):
+                app.knowledge_sources(manifest, {path: b'content'}, require_sources=True)
+
     def test_does_not_overwrite(self):
         self.build()
         with self.assertRaises(FileExistsError): self.build()

@@ -1,13 +1,13 @@
 ---
 name: cc-aidev-agentcici-expert
 metadata:
-  version: "1.8.4"
+  version: "1.8.6"
 description: 使用开发者密钥管理 AgentCiCi 组织内智能体、技能、知识库和 MCP 服务，发现并读取 MCP 工具后关联智能体；指导第三方 Web AI 应用开发、CloudCC 自定义对象与自定义类开发、站点与脚本菜单集成，并将前端产物、原生智能体包和技能包整理为发布申请 ZIP 并提交到已部署的接收接口。用于平台资源管理、应用开发与申请包准备；自动安装须先核对服务端能力。
 ---
 
 # AgentCiCi 平台管理
 
-当前技能版本：`1.8.4`。
+当前技能版本：`1.8.6`。
 
 本 Skill 同时服务两个阶段：设计阶段先理解模块职责与边界，实施阶段再调用明确的管理 API。不要在不了解现有资源的情况下直接写入。
 
@@ -190,3 +190,7 @@ python3 /installed/agentcici/scripts/agentcici_manage.py agents bind-tools AGENT
 准备或发布 AI 应用时，先读 [清单与问答规范](references/application-manifest.md)。读取现有清单及客户已确认信息，运行 `check --manifest ...`，只问仍缺失或冲突的必填项，分组提问并将回答写回应用目录的清单。对象相关入口先用 CloudCC 开发技能查询实际对象，再让客户选择；不猜测对象 ID、已有资源 ref 或发布版本。不请求用户重复提供已确认信息。
 
 缺失项未补齐前可继续开发和只读检查，但不得上传或声称可发布。补齐后构建、打包、校验并展示实际清单与资源摘要。开发者可按application.submit上传并创建本组织草稿，按application.publish发布本组织拥有的版本；平台应用发布与市场审核仍由平台管理员执行，不赋予跨组织或自动上架权限。
+
+## 知识库随应用交付
+
+开发过程中创建知识库或上传资料前，先把经用户授权交付的源文件保存到应用项目 `knowledge/<ref>/`，并在对应知识库声明的 `documents` 路径数组中维护清单。新打包必须携带源文件，不能只声明库名或依赖线上临时文件。示例与生命周期见 references/ai-applications.md。不得把未经授权的客户资料或凭据加入应用包。

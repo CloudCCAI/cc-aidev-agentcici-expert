@@ -37,4 +37,4 @@ python3 /installed/agentcici/scripts/agentcici_manage.py agents bind-knowledge a
 
 123/456为示例，使用本次返回的真实ID。先读取智能体并保留已有知识库关联，不能直接套用示例覆盖。资料上传后检查文档状态与indexedAt；INDEXING不是完成，FAILED要读取错误；索引完成后必须以实际问题验证命中内容，再绑定或编译发布智能体。接口复用现有文件类型/大小、商业额度及索引限制，不无限轮询。上传结果未知先查询文档列表，CLI不会自动重复上传。
 
-重建索引用reindex-document；删除前确认精确目标，delete和delete-document均要求相同--confirm-id。只上传用户允许使用的资料，真实客户数据和测试资料不自动进入应用ZIP。应用清单知识库声明仅创建目标库及绑定，不会自动迁移源库资料/向量索引；安装后按资料交付范围通过这些接口填充目标库并再次检索验收。
+重建索引用reindex-document；删除前确认精确目标，delete和delete-document均要求相同--confirm-id。只上传用户允许使用的资料，真实客户数据和测试资料不自动进入应用ZIP。开发时先将获授权的源文件保存在项目knowledge/<ref>/目录，并在knowledgeBases[].documents声明。应用包携带原文件及摘要，不携带向量；安装时同名库直接复用且不覆盖资料，不存在才创建并导入索引。正常卸载和失败回滚均在无其他应用、智能体、有效技能引用时删除关联库，有引用则保留。旧包无源文件只能复用现成库，不能新建空库。

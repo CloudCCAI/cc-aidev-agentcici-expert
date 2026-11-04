@@ -34,7 +34,7 @@
 
 外层 `format=agentcici-application-request`；含对象/字段/类必须为formatVersion=2。不含CRM业务资源时默认兼容formatVersion=1，也可显式formatVersion=2并声明空cloudccResources；不能仅凭版本号推断资源是否完整。含 application.json、单个 site.zip（根层index.html）、自定义智能体 agents/<ref>.ciciagent、独立技能 skills/<ref>.zip。新清单入口代码写入 installationManifest.steps；仅旧menu格式额外生成 cloudcc/menu.json。sha256覆盖所有外层文件，application.json自身除外，原生包字节不变。
 
-平台智能体使用可选platformAgent={ref}，agents为空；不打包它已有的托管技能/知识库。不需要智能体时agents为空且无platformAgent。自定义智能体完整校验技能、知识和工具的导出依赖映射；工具按已支持的MCP/内置声明映射，托管技能使用显式托管绑定，不用伪造原生包。知识库定义至少ref/name，客户文档不随包上传。
+平台智能体使用可选platformAgent={ref}，agents为空；不打包它已有的托管技能/知识库。不需要智能体时agents为空且无platformAgent。自定义智能体完整校验技能、知识和工具的导出依赖映射；工具按已支持的MCP/内置声明映射，托管技能使用显式托管绑定，不用伪造原生包。知识库定义包含ref/name及documents源文件路径数组；仅打包用户授权交付的资料。
 
 旧源清单web.directory、agents/skills/knowledgeBases/menu保留兼容；旧menu重新打包须显式提供sdkUrl或functioncode，不默认指向UAT。新应用只使用schemaVersion=2。新源清单appType=web，不接受开发者自行声明官方发布身份。官网身份由平台管理员创建草稿时确定。
 
@@ -145,3 +145,11 @@ V2应用不再设置120项或其他固定的安装步骤总数上限；按实际
 本协议允许object/field/class/trigger/timer/validationRule；触发器需targetObjectApiName和triggerTime，原生SOURCE放cloudcc/backend/triggers；定时类SOURCE放cloudcc/backend/timers；验证规则JSON放cloudcc/metadata，含objectApiName/formulaText/errorMessage。它们沿用目标安装器现有权限与约束：触发器初始禁用，定时类不自动调度，在已有对象增加触发器或验证规则仍需维护窗口，不伪造自动升级能力。
 
 现有字段配置变化仍不支持自动升级，明确报UPGRADE_UNSUPPORTED；新装前把参数随包声明，已安装旧版的约束补配由管理员维护。权限/布局分配、公式和累计汇总、全局选项、查找筛选、选项依赖及多语言不接受源组织ID或未定义属性；按目标元数据设计另行交付，不静默删属性。纯Web/AI应用可显式V2并传空cloudccResources，与平台校验一致。
+
+技能包的resources.json知识库依赖必须使用真实名称（matchStrategy=byName，可省略），并对应应用knowledgeBases声明中的唯一名称；运行时知识库ID不得写入name。本地打包与服务端收包均应拦截未声明依赖；旧错误包应重新导出，不用源组织ID猜测目标资源。
+
+## 知识库源文件与安装生命周期
+
+源文件保存于应用 `knowledge/<ref>/`，知识库声明示例：`{"ref":"method","name":"销售方法论","documents":["knowledge/method/方法论.md"]}`。schemaVersion2源清单使用 `agent.knowledges` 的相同结构。CLI新打包要求每个库有documents，原字节入ZIP并纳入外层SHA256；支持txt/md/csv/json/docx/pdf，每文件不超过25MiB，不能引用项目外路径、链接或缺失文件。
+
+安装时同组织同名唯一库直接复用，不覆盖原资料或导入新版包文件；无同名则新建、导入包内文件并完成索引，再发布技能和智能体。旧包无源文件时仍可复用已有库，新建库须重新打包。卸载和失败回滚均在解除自身引用后检查其他应用/智能体/有效技能引用：有引用保留，无引用删除关联库（包括复用库）。本地项目源文件是重新打包的来源，应独立保留。

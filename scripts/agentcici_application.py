@@ -74,6 +74,26 @@ def refs(items):
     return result
 
 
+def knowledge_sources(manifest, files, require_sources=False):
+    paths = set()
+    for kb in manifest.get('knowledgeBases', []):
+        documents = kb.get('documents')
+        if documents is None and not require_sources:
+            continue  # Historical packages may reuse an existing library.
+        require(isinstance(documents, list) and documents, '知识库缺少项目源文件声明')
+        prefix = 'knowledge/' + kb['ref'] + '/'
+        for path in documents:
+            require(isinstance(path, str) and path.startswith(prefix), '知识库源文件路径无效')
+            leaf = path[len(prefix):]
+            require(leaf and not leaf.startswith('.') and not any(c in leaf for c in '/\\:')
+                    and not any(ord(c) < 32 or ord(c) == 127 for c in leaf)
+                    and pathlib.PurePosixPath(leaf).suffix.lower() in {'.txt', '.md', '.csv', '.json', '.docx', '.pdf'}
+                    and path not in paths and path in files and 0 < len(files[path]) <= 26_214_400,
+                    '知识库源文件声明、路径或大小无效')
+            paths.add(path)
+    return paths
+
+
 def validate(files):
     manifest = json.loads(files['application.json'])
     if manifest.get('formatVersion') == 2:
@@ -176,8 +196,11 @@ def validate(files):
         require(re.fullmatch(r'[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*(?:\.[A-Za-z0-9_-]+)+', render['entryPath']) and render['entryPath'] in site, '包内入口不存在或路径无效')
         require(not render.get('entryUrl'), '包内入口与外部地址不能同时配置')
     expected = {'application.json', 'site.zip'}
+    expected.update(knowledge_sources(manifest, files))
     if 'cloudcc/menu.json' in files: expected.add('cloudcc/menu.json')
     else: require(bool(manifest.get('installationManifest', {}).get('steps')), '需要安装入口')
+    knowledge_names = [item.get('name', '').strip().lower() for item in knowledge.values()]
+    require(all(knowledge_names) and len(set(knowledge_names)) == len(knowledge_names), '应用知识库名称必须非空且唯一')
     for ref, skill in skills.items():
         require(skill['file'] == f'skills/{ref}.zip', '技能文件路径非法')
         expected.add(skill['file'])
@@ -185,6 +208,16 @@ def validate(files):
         sm = json.loads(package['manifest.json'])
         require(sm.get('format') == 'universal-skill-package' and sm.get('formatVersion') == '1.0'
                 and 'SKILL.md' in package, '技能需为平台标准导出包')
+        resources = json.loads(package.get('resources.json', b'{}'))
+        require(isinstance(resources, dict), '技能资源声明必须为对象')
+        dependencies = resources.get('knowledgeBases', [])
+        require(isinstance(dependencies, list), '技能知识库依赖必须为数组')
+        for dependency in dependencies:
+            require(isinstance(dependency, dict), '技能知识库依赖必须为对象')
+            name = dependency.get('name', '').strip()
+            require(dependency.get('matchStrategy', 'byName') == 'byName'
+                    and name.lower() in knowledge_names,
+                    f'技能知识库依赖未按名称声明在应用中：{ref} / {name}')
     for ref, agent in agents.items():
         require(agent['file'] == f'agents/{ref}.ciciagent', '智能体文件路径非法')
         expected.add(agent['file'])
@@ -274,6 +307,14 @@ def package(source, output):
                     and url.hostname and not url.username and not url.password and not url.query and not url.fragment, 'SDK地址必须是明确的无凭据HTTPS或本机HTTP地址')
             script = (pathlib.Path(__file__).resolve().parent.parent / 'assets/application-menu.js').read_text(encoding='utf-8').replace('__APP_CODE__', json.dumps(config['appCode'])).replace('__SDK_URL__', json.dumps(sdk_url))
         files['cloudcc/menu.json'] = encode({'tabName': menu['tabName'], 'pname': menu['pname'], 'type': 'script', 'functioncode': script})
+    for kb in manifest['knowledgeBases']:
+        require(isinstance(kb.get('documents'), list) and kb['documents'], '知识库缺少项目源文件声明')
+        for name in kb['documents']:
+            path = local(name)
+            require(path.is_file() and 0 < path.stat().st_size <= 26_214_400, '知识库源文件不存在或过大')
+            require(name not in files, '知识库源文件重复')
+            files[name] = path.read_bytes()
+    knowledge_sources(manifest, files, require_sources=True)
     manifest['sha256'] = {name: digest(data) for name, data in files.items()}
     if config.get('cloudccResources') or config.get('formatVersion') == 2:
         manifest['formatVersion'] = 2
