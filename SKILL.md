@@ -1,13 +1,13 @@
 ---
 name: cc-aidev-agentcici-expert
 metadata:
-  version: "1.8.9"
+  version: "1.9.0"
 description: 使用开发者密钥管理 AgentCiCi 组织内智能体、技能、知识库和 MCP 服务，发现并读取 MCP 工具后关联智能体；指导第三方 Web AI 应用开发、CloudCC 自定义对象与自定义类开发、站点与脚本菜单集成，并将前端产物、原生智能体包和技能包整理为发布申请 ZIP 并提交到已部署的接收接口。用于平台资源管理、应用开发与申请包准备；自动安装须先核对服务端能力。
 ---
 
 # AgentCiCi 平台管理
 
-当前技能版本：`1.8.9`。
+当前技能版本：`1.9.0`。
 
 本 Skill 同时服务两个阶段：设计阶段先理解模块职责与边界，实施阶段再调用明确的管理 API。不要在不了解现有资源的情况下直接写入。
 
@@ -129,7 +129,7 @@ script.src = url.href;
 - 智能体/技能上传下载及知识库依赖：读 [references/resource-packages.md](references/resource-packages.md)。保留原生包，不用 CRUD 返回 JSON 冒充导出包；后台登录接口不能使用开发者 Token 冒充登录身份。
 - 智能体设计、CRUD、关联资源或编译发布：先读 [references/agents.md](references/agents.md)，实施时运行 `scripts/agentcici_manage.py agents ...`。
 - 创建或撤销智能体运行密钥：先读 [智能体密钥管理](references/agents.md#运行-api-key-管理)，使用 `agents create-api-key` / `agents revoke-api-key`；明文 Key 只保存到指定私密文件，不回显或打包。
-- 应用需要持续语音通话：读 [持续语音通话SDK指南](references/voice-call.md)，统一在线加载平台SDK，实际script请求追加运行时时间戳，不把SDK源码合并进应用JS；复用分轮、播报、插话与生命周期，界面由应用实现。
+- 应用需要语音通话、音色选择或AI回答朗读：读 [语音通话与朗读接入指南](references/voice-call.md)。在线加载SDK1.0.0并检查supportsVoiceSelection能力，实际script请求追加运行时时间戳；通过listVoices/setVoice/synthesize共用音色，普通聊天流式朗读由应用管理队列和PCM播放，复用短期身份而非逐段换票。仅朗读不申请麦克风、不启动通话；SDK源码不合并进应用JS。
 - 应用需要麦克风语音转文字：读 [实时语音输入指南](references/voice-input.md)，复用宿主运行身份申请短期凭证，再按 WebSocket 协议发送 PCM；按需实现，不要求所有应用增加语音。
 - 调用已发布智能体：读 [references/agent-runtime-openapi.md](references/agent-runtime-openapi.md)。这套运行 API 使用 Agent API Key，不使用开发者密钥。
 - 技能设计、CRUD 或编译发布：先读 [references/skills.md](references/skills.md)，实施时运行 `scripts/agentcici_manage.py skills ...`。
