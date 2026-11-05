@@ -18,21 +18,49 @@
 - iframe应用继续复用已有`AgentCiCiApp.createClient()`，先等`client.ready`。宿主client的`refresh()`只发送消息、不返回runtime；按[语音输入指南的refreshVoiceRuntime适配](voice-input.md#最小协议接入示例)，通过subscribe跳过初次旧值、等待下一次上下文，并设置超时与取消，不能写`await client.refresh()`当作身份。
 - 显式localhost测试可返回未提交的本地runtime配置，不把它变成正式环境的身份兜底。
 
-脚本使用普通script，不使用module/import或浏览器.mjs；动态加载追加运行时时间戳，保留已有查询参数。等待脚本onload后再创建client，不复制SDK实现进应用维护第二份逻辑。
+## 统一在线加载与运行时时间戳
+
+语音SDK统一从目标平台在线加载，不下载后内联/合并进应用JS，不在发布包中携带SDK实现或设备语音回退副本。应用只保留加载器、界面和业务适配；SDK地址仍使用固定版本，当前为agentcici-voice@1.0.0.js。
+
+每次实际创建script请求时，在加载当刻执行`url.searchParams.set('_t', String(Date.now()))`。不在构建时生成时间戳，不把Key/Token拼进URL；用URL处理已有查询参数和hash，不直接拼第二个问号。时间戳请求目标地址的最新响应，不能保证绕过自定义Service Worker/CDN策略，也不自动切换SDK版本或热替换正在通话的实例。
+
+同一页面以不含时间戳的规范SDK URL（含origin和版本）缓存加载Promise，成功后复用；不同origin/版本不能共用缓存。为与其他应用共用，可采用`Symbol.for('agentcici.voice.sdk.loads')`作为页面共享Map。失败或超时清除对应Promise和script，允许用户显式重试；不能将失败Promise永久缓存，也不能无限自动重试。新页面/刷新页面会创建新请求和新时间戳，不要求每轮问答重新下载SDK。
+
+应用聊天界面与注册不能等待语音脚本完成；在语音分支后台初始化。组件就绪前禁用语音启动按钮，失败提供明确重试，普通聊天保持可用。异步重试成功后提示用户再次点击，不能在网络回调中直接启动录音/播放而丢失移动端用户手势。SDK加载完成后仍检查宿主是否已销毁或signal已abort，迟到结果不能创建/启动已结束实例。
 
 ```js
-// 初始化阶段：getRuntime是按上述宿主类型实现的刷新函数。
+function loadOnlineVoiceSdk(runtime) {
+  const key = Symbol.for('agentcici.voice.sdk.loads');
+  const loads = window[key] || (window[key] = new Map());
+  const url = new URL('/sdk/agentcici-voice@1.0.0.js', runtime.apiBase);
+  const source = url.href;
+  if (loads.has(source)) return loads.get(source);
+  const pending = new Promise((resolve, reject) => {
+    const script = document.createElement('script'); let settled = false;
+    function finish(error) {
+      if (settled) return;
+      settled = true; clearTimeout(timer); script.onload = script.onerror = null; script.remove();
+      if (error) reject(error); else resolve(window.AgentCiCiVoice);
+    }
+    const timer = setTimeout(() => finish(new Error('语音SDK加载超时')), 10000);
+    script.onload = () => finish(window.AgentCiCiVoice?.version === '1.0.0'
+      && typeof window.AgentCiCiVoice.createClient === 'function'
+      ? null : new Error('语音SDK内容或版本不正确'));
+    script.onerror = () => finish(new Error('语音SDK加载失败'));
+    url.searchParams.set('_t', String(Date.now())); // 每次新请求在此生成，不在构建时写死
+    script.src = url.href; // 普通script，不设置type=module
+    document.head.append(script);
+  });
+  loads.set(source, pending);
+  pending.catch(() => { if (loads.get(source) === pending) loads.delete(source); });
+  return pending;
+}
+
+// 语音分支的后台初始化；不要用它阻塞应用mount或普通聊天。
 const initial = await getRuntime();
-const url = new URL('/sdk/agentcici-voice@1.0.0.js', initial.apiBase);
-url.searchParams.set('_t', new Date().getTime());
-await new Promise((resolve, reject) => {
-  const script = document.createElement('script');
-  script.src = url.href;
-  script.onload = resolve;
-  script.onerror = () => reject(new Error('语音SDK加载失败'));
-  document.head.append(script);
-});
-const voiceClient = AgentCiCiVoice.createClient({
+const sdk = await loadOnlineVoiceSdk(initial);
+lifecycle.signal.throwIfAborted(); // 宿主销毁后不创建迟到实例
+const voiceClient = sdk.createClient({
   getRuntime,
   user: runtime => runtime.user || runtime.currentUser?.userId,
   signal: lifecycle.signal
@@ -44,12 +72,15 @@ const call = voiceClient.createVoiceCall({
   onError: error => showError(error.message),
   onDraft: text => preserveDraft(text)
 });
+// 初始化成功后启用按钮；由之后的用户点击直接触发start。
 startButton.onclick = () => call.start().catch(error => showError(error.message));
 muteButton.onclick = () => call.setMuted(true);
 unmuteButton.onclick = () => call.setMuted(false);
 hangupButton.onclick = () => call.hangup().catch(error => showError(error.message));
 // 宿主销毁：lifecycle.abort(); call.destroy();
 ```
+
+给后台初始化捕获异常并显示语音分支的加载状态、失败和重试，不使整个聊天应用失败。loader超时后，即使迟到脚本仍在浏览器执行，也不能自动开始媒体。多个应用共用加载结果，但各自维护通话实例与销毁状态，不能删除公共SDK全局变量来强制更新其他应用正在使用的实例。
 
 `user`是调用方已有的稳定终端用户ID，也可直接传字符串；不能用每轮随机ID或伪造CRM用户来绕过隔离。`getRuntime`每次返回`apiBase/apiKey`及可选`keyType/cloudccContext/user/currentUser/agentId/companyId`；SDK在每个受保护请求前刷新，身份变化须结束当前通话、重新建立，单纯Key续期不等于换用户。标准Key不用传CRM请求头。
 
@@ -97,6 +128,6 @@ Content-Type: application/json
 
 ## 交付验收
 
-先测试SDK不加载应用人物/界面也能两轮问答，再验应用适配：稳定user与conversationId、识别替换、回答顺序、短促噪声不打断、真实插话、16k/44.1k/48k源采样率、静音恢复、停止失败、启动取消、身份更新、后台和销毁资源释放。复用平台服务前读真实返回与版本，不仅检查SDK全局变量存在。
+先检查应用发布JS不含SDK实现、SDK网络请求来自runtime平台origin且带当次时间戳，同页去重、失败/超时重试、正常聊天不阻塞和销毁后迟到加载保护；再测试SDK不加载应用人物/界面也能两轮问答并验应用适配：稳定user与conversationId、识别替换、回答顺序、短促噪声不打断、真实插话、16k/44.1k/48k源采样率、静音恢复、停止失败、启动取消、身份更新、后台和销毁资源释放。复用平台服务前读真实返回与版本，不仅检查SDK全局变量存在。
 
 模拟ASR/PCM回归、注入合成测试语音的真实平台联调和人类麦克风实机分别记录；PC/移动端外放、权限和回声由实际目标设备验证，不能用模拟视口代替。目标环境缺少SDK/ASR/合成路由时报告具体缺失，不在普通应用开发任务中擅自部署平台；部署须在用户授权的范围内。
