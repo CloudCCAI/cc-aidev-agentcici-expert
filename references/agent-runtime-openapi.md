@@ -75,3 +75,5 @@ curl -X POST "${AGENTCICI_API_BASE%/}/chat-messages" \
 ## 实时语音输入
 
 应用需要麦克风转文字时，读取[语音接入指南](voice-input.md)，按宿主身份刷新、audio权限、短期凭证与WebSocket握手接入；指南包含音频格式、转写拼接、停止清理和接入验收。语音只产生文字，发送智能体继续使用本教程的chat-messages。
+
+持续语音问答、平台播报和插话优先使用[通用持续通话SDK](voice-call.md)，由SDK组合ASR、chat-messages与voice-speech；对照其中的权限、会话、停止和合成契约，不把转写自动当成一次聊天。
