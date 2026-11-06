@@ -1,13 +1,13 @@
 ---
 name: cc-aidev-agentcici-expert
 metadata:
-  version: "1.9.3"
+  version: "1.9.4"
 description: 使用开发者密钥管理 AgentCiCi 组织内智能体、技能、知识库和 MCP 服务，发现并读取 MCP 工具后关联智能体；指导第三方 Web AI 应用开发、CloudCC 自定义对象与自定义类开发、站点与脚本菜单集成，并将前端产物、原生智能体包和技能包整理为发布申请 ZIP 并提交到已部署的接收接口。用于平台资源管理、应用开发与申请包准备；自动安装须先核对服务端能力。
 ---
 
 # AgentCiCi 平台管理
 
-当前技能版本：`1.9.3`。
+当前技能版本：`1.9.4`。
 
 本 Skill 同时服务两个阶段：设计阶段先理解模块职责与边界，实施阶段再调用明确的管理 API。不要在不了解现有资源的情况下直接写入。
 
@@ -134,7 +134,7 @@ script.src = url.href;
 - 调用已发布智能体：读 [references/agent-runtime-openapi.md](references/agent-runtime-openapi.md)。这套运行 API 使用 Agent API Key，不使用开发者密钥。
 - 技能设计、CRUD 或编译发布：先读 [references/skills.md](references/skills.md)，实施时运行 `scripts/agentcici_manage.py skills ...`。
 - MCP 服务设计、CRUD、工具发现与组织现有工具读取：先读 [references/mcp-tools.md](references/mcp-tools.md)，实施时运行 `scripts/agentcici_manage.py mcp ...` 或 `tools list`；工具只能读取并关联智能体，不单独创建。
-- 知识库管理、资料上传、索引与检索：读 [references/knowledge-bases.md](references/knowledge-bases.md)，使用 `scripts/agentcici_manage.py knowledge ...`；随后将真实库ID关联到智能体并编译发布。
+- 知识库管理、访问策略、资料上传、索引与检索：读 [references/knowledge-bases.md](references/knowledge-bases.md)，使用 `scripts/agentcici_manage.py knowledge ...`。新建知识库默认组织成员可读（`COMPANY_OPEN`），包括同组织有效的 API_CLIENT。资料需要限制访问时，上传前用 `get-access` 读取版本，再用 `set-access` 设置策略。绑定知识库时使用真实库 ID。
 - 换票、scope、错误语义：读 [references/authentication.md](references/authentication.md)。
 
 只读取当前任务所需的参考文件。

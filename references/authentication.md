@@ -20,7 +20,7 @@ Content-Type: application/json
 | 智能体 | `agent.read` | `agent.write` | `agent.delete` |
 | 技能 | `skill.read` | `skill.write` | `skill.delete` |
 | MCP 服务 | `mcp.read` | `mcp.write` | `mcp.delete` |
-| 知识库 | `knowledge.read` | `knowledge.write` | `knowledge.delete` |
+| 知识库 | `knowledge.read` | `knowledge.write`、`knowledge.access.write`（修改访问策略） | `knowledge.delete` |
 
 ## 错误语义
 

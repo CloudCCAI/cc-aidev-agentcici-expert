@@ -176,6 +176,11 @@ def add_resource_commands(module: argparse.ArgumentParser, id_name: str) -> None
 
 def add_knowledge_commands(module):
     commands = add_resource_commands(module, 'resource_id')
+    get_access = commands.add_parser('get-access', help='读取知识库访问模式、角色和版本')
+    get_access.add_argument('resource_id')
+    set_access = commands.add_parser('set-access', help='按已读取的版本替换知识库访问策略')
+    set_access.add_argument('resource_id')
+    add_payload_arguments(set_access)
     documents = commands.add_parser('documents', help='读取知识库文档与索引状态')
     documents.add_argument('resource_id')
     upload = commands.add_parser('upload', help='上传授权测试资料，需另外发布索引')
@@ -247,6 +252,10 @@ def execute(client, args):
     if args.command == "discover":
         return client.request("POST", path + "/discover")
     if args.module == 'knowledge':
+        if args.command == 'get-access':
+            return client.request('GET', path + '/access')
+        if args.command == 'set-access':
+            return client.request('PUT', path + '/access', read_payload(args))
         if args.command == 'documents':
             return client.request('GET', path + '/documents')
         if args.command == 'upload':

@@ -53,6 +53,15 @@ class ManagementTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.run_command('agents', 'bind-skills', 'a', '--json', '{}')
 
+    def test_knowledge_access_routes_preserve_role_ids_and_version(self):
+        path = '/openapi/v1/management/knowledge-bases/30/access'
+        client = self.run_command('knowledge', 'get-access', '30')
+        client.request.assert_called_once_with('GET', path)
+        client = self.run_command('knowledge', 'set-access', '30', '--json',
+                                  '{"mode":"ROLE_RESTRICTED","roleIds":["role-a"],"expectedVersion":0}')
+        client.request.assert_called_once_with(
+            'PUT', path, {'mode': 'ROLE_RESTRICTED', 'roleIds': ['role-a'], 'expectedVersion': 0})
+
     def test_delete_requires_matching_id(self):
         c = Mock()
         with self.assertRaises(RuntimeError):

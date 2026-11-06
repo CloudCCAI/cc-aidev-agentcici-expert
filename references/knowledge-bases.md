@@ -10,6 +10,8 @@
 | --- | --- | --- |
 | 列表、详情 | GET 空路径、/{kbId} | knowledge.read |
 | 创建、完整更新名称说明 | POST 空路径、PUT /{kbId} | knowledge.write |
+| 查询访问策略 | GET /{kbId}/access | knowledge.read |
+| 替换访问策略 | PUT /{kbId}/access | knowledge.access.write，责任人同时须有 kb.manage |
 | 删除知识库 | DELETE /{kbId} | knowledge.delete |
 | 文档列表 | GET /{kbId}/documents | knowledge.read |
 | 上传资料 | POST /{kbId}/documents，multipart file | knowledge.write |
@@ -17,7 +19,9 @@
 | 删除文档 | DELETE /documents/{documentId} | knowledge.delete |
 | 检索测试 | POST /{kbId}/retrieval/test | knowledge.read |
 
-创建请求为name/description，不接收任意权限字段；复用后台默认ADMIN_ONLY策略，不默认扩大知识库可见性。应用运行需要其他业务用户读取时，按已确认访问设计在现有权限界面配置并核验，不把“无需多角色系统测试”理解为跳过必要授权。被智能体或已安装应用引用的知识库仍受现有删除约束。
+创建请求只包含 name 和 description。支持该接口的新版平台中，新建知识库默认组织成员可读（`COMPANY_OPEN`），包括同组织有效的 API_CLIENT 机器成员。应用安装时新建的库使用相同默认值，复用现有库时沿用其访问策略。资料需要限制访问时，在上传前用 `get-access` 核对策略并用 `set-access` 设置。被智能体或已安装应用引用的知识库仍受现有删除约束。
+
+先用 `get-access` 读取 `mode`、`roleIds` 和 `version`。授权范围已确认后，用 `set-access` 提交完整策略，把读取到的 `version` 传为 `expectedVersion`。示例角色 ID 和版本须替换为实查值。`ROLE_RESTRICTED` 需要至少一个当前组织的有效角色 ID，传入列表会替换原有授权角色。`ADMIN_ONLY` 和 `COMPANY_OPEN` 均传空角色列表。组织开放允许同组织有效的 API_CLIENT 机器成员读取。按角色授权时，运行 Key 的执行成员必须拥有目标角色。冲突时重新读取并复核策略后再提交。
 
 ## 命令流程
 
@@ -28,6 +32,8 @@ python3 /installed/agentcici/scripts/agentcici_manage.py knowledge list
 python3 /installed/agentcici/scripts/agentcici_manage.py knowledge create --json '{"name":"应用产品资料","description":"已获授权的知识资料"}'
 python3 /installed/agentcici/scripts/agentcici_manage.py knowledge get 123
 python3 /installed/agentcici/scripts/agentcici_manage.py knowledge update 123 --json '{"description":"新的说明"}'
+python3 /installed/agentcici/scripts/agentcici_manage.py knowledge get-access 123
+python3 /installed/agentcici/scripts/agentcici_manage.py knowledge set-access 123 --json '{"mode":"ROLE_RESTRICTED","roleIds":["example-role-id"],"expectedVersion":0}'
 python3 /installed/agentcici/scripts/agentcici_manage.py knowledge upload 123 --file /project/approved/product-guide.pdf
 python3 /installed/agentcici/scripts/agentcici_manage.py knowledge publish-document 456
 python3 /installed/agentcici/scripts/agentcici_manage.py knowledge documents 123
