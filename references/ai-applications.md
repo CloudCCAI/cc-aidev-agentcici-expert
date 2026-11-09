@@ -2,6 +2,12 @@
 
 新应用使用 [源清单与发布前问答](application-manifest.md)。源清单保存于应用自己的目录，由工具生成 ZIP 内的 application.json；源清单不被覆盖。
 
+## 平台应用目录与发布范围
+
+从 AgentCiCi 2.8.107 起，管理端 AI 应用目录区分内置（`BUILTIN`）、外部（`EXTERNAL`）和 CloudCC（`CLOUDCC`）。本指南的上传应用包、版本发布、市场和 CRM 安装流程只适用于 `CLOUDCC`。在管理端的 CloudCC 页签上传应用包，开发者应用管理 OpenAPI 同样只查询和操作 CloudCC 应用。
+
+用户端 AI 应用菜单由服务端按组织开通、启用与成员可用性过滤，仅展示符合条件的内置和外部应用。CloudCC 应用通过已安装的 CRM 入口验收。若上传或创建草稿时提示 `appCode` 已被内置或外部应用保留，为新应用选择独立编码。
+
 ## 提交与权限
 
 - `check` 检查源清单；`package` 打包；`validate` 校验v1/v2包；`submit` 上传并创建草稿；`draft` 重试草稿；`status` 查询申请；`list/get` 管理本组织应用与版本；`publish` 发布已上传版本；`release` 串联打包、上传、草稿和组织发布。

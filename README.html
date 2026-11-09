@@ -19,7 +19,7 @@
 </head>
 <body><main>
   <h1>AgentCiCi 开发与管理 Skill</h1>
-  <section class="summary"><strong>阅读摘要</strong><p>这是一个给 Codex 等 AI 智能体使用的 Skill。用户不需要手动运行管理脚本，只需要用自然语言说明目标。当前版本为 <code>1.9.4</code>。</p></section>
+  <section class="summary"><strong>阅读摘要</strong><p>这是一个给 Codex 等 AI 智能体使用的 Skill。用户不需要手动运行管理脚本，只需要用自然语言说明目标。当前版本为 <code>1.9.6</code>。</p></section>
   <p>AI应用开发只在 <code>applications/&lt;appCode&gt;/</code> 进行，不需要平台backend/frontend/deploy源码。每个应用独立维护清单、源码与发布产物；CloudCC资源集中在 <code>cloudcc/</code>，类为 <code>cloudcc/backend/classes/</code>。项目根目录共用配置和CRM缓存，适配器临时链接后在应用cloudcc工程内操作，不创建根backend映射。<a href="references/application-manifest.md#项目与多应用目录">查看目录规则</a>。已有项目保留其结构，不自动迁移。</p>
   <p><a href="references/development-workflow.md">AI App七阶段流程</a>涵盖Web、对象/字段、自定义类，以及智能体、技能、知识库和MCP关联；AgentCiCi与CRM开发凭据分别配置。知识库开发者管理与组织应用发布需部署对应后端并授予scope。</p>
   <p>Web 使用原生 HTML、CSS、JavaScript；业务按需采用 Web → 自定义类 → 自定义对象、Web → Agent（智能体）两条调用链。</p>
@@ -28,6 +28,8 @@
     <li><a href="#web">AI Web 应用</a></li><li><a href="#release">发布申请</a></li><li><a href="#principles">操作原则</a></li>
   </ul></nav>
 
+  <h2>1.9.6 更新说明</h2><p>AI 应用项目必须在开始工作前读取或补建根目录的 <code>AGENTS.md</code>。仅有 <code>CLAUDE.md</code> 时保留原文并补齐规则索引。</p>
+  <h2>1.9.5 更新说明</h2><p>技能在 <code>cloudcc-ccagent</code> 随平台功能维护，独立 GitHub 仓库用于按需分发。补充 AI 应用目录的 CloudCC 发布边界及知识库正文编辑后的索引流程。详见<a href="references/maintenance.md">技能维护与发布</a>。</p>
   <h2>1.9.4 更新说明</h2><p>知识库新增 <code>get-access</code> 和 <code>set-access</code>，支持查询及按角色修改访问策略。新版平台创建知识库默认组织成员可读，覆盖同组织有效的 API_CLIENT 机器成员。</p>
   <h2>1.9.3 更新说明</h2><p>语音合成前跳过纯符号片段，保留正文内标点。补充默认男声短答零音频时服务端保持原文和音色的一次补试，以及失败、计量和应用不重播边界。</p>
   <h2>1.9.1 更新说明</h2><p>对齐SDK1.0.0按音色能力和客户端工厂升级旧全局对象、保留旧实例引用及完整能力单例复用，补充失败回退与验收。</p>
