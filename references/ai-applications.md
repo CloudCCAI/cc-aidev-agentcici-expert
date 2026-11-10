@@ -135,7 +135,7 @@ V2应用不再设置120项或其他固定的安装步骤总数上限；按实际
 
 | 资源 | 参数 | 类型与语义 |
 | --- | --- | --- |
-| 对象 | accessable | 字符串0专用、1公用只读、2公用读写，省略为0 |
+| 对象 | accessable | 字符串 `"0"` 专用、`"1"` 公用只读、`"2"` 公用读写。自技能 1.9.8 起，打包器在缺省时写入 `"2"` |
 | 对象 | quickCreate/locationEnabled/reportable | JSON布尔，分别控制快速新建、定位和报表开关，省略为false |
 | 字段 | required | JSON布尔，映射原生requires |
 | 文本S/数字N/邮箱E | allowDuplicates | JSON布尔；false映射原生isrepeat=false，安装时创建原生不允许重复约束 |
@@ -145,6 +145,8 @@ V2应用不再设置120项或其他固定的安装步骤总数上限；按实际
 | 文本S | placeholder | 字符串，输入提示 |
 | 本地单选L/多选Q | options | 必填、非空字符串数组，按数组顺序安装；不允许重复、首尾空白、换行、空值或源选项ID，每项最多255个UTF-16单元 |
 | 本地单选L/多选Q | defaultFirstOption | JSON布尔，默认false；true把第一项设为默认；不提供任意源选项ID |
+
+打包默认值只写入新 ZIP 中的对象定义，源文件保留原样，显式值按源清单打包。Setup Service `19.7.R36` 的 AI 应用安装路径创建对象时固定采用公用读写。需要专用或公用只读时，使用支持按清单创建并回读对象访问权限的安装器。
 
 例如请求键字段声明`{"apiName":"request_key","objectApiName":"sm_entry","label":"请求键","fieldType":"S","length":255,"allowDuplicates":false,"required":false}`。安装后回读真实属性，不匹配报RESOURCE_CONFIGURATION_READBACK_MISMATCH；新属性纳入快照摘要，执行前漂移检查仍生效。历史包未声明的新属性不加入其快照，避免升级安装器造成旧回执漂移。
 

@@ -331,7 +331,13 @@ def package(source, output):
             path = local(resource['file'])
             require(path.is_file() and path.stat().st_size <= LIMIT, '业务资源文件不存在或过大')
             require(resource['file'] not in files, '业务资源文件重复')
-            files[resource['file']] = path.read_bytes()
+            content = path.read_bytes()
+            if resource.get('kind') == 'object':
+                definition = json.loads(content)
+                if isinstance(definition, dict) and 'accessable' not in definition:
+                    definition['accessable'] = '2'
+                    content = encode(definition)
+            files[resource['file']] = content
         manifest['sha256'] = {name: digest(value) for name, value in files.items()}
     files['application.json'] = encode(manifest)
     validate(files)
