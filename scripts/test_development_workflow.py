@@ -66,7 +66,7 @@ class BusinessPackageTest(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.config = fixture(self.root)
         self.config['installationManifest'] = {
-            'schemaVersion': 1, 'steps': [{'key': 'menu', 'type': 'menu'}],
+            'schemaVersion': 1, 'steps': [{'key': 'menu', 'type': 'menu', 'payload': {'pname': 'record_menu'}}],
             'renderConfig': {'renderer': 'iframe', 'entryUrl': 'https://app.test/index.html',
                              'positions': ['home'], 'closeBehavior': 'hide', 'hostLayer': 'content'}}
         (self.root / 'cloudcc/metadata').mkdir(parents=True)

@@ -3,7 +3,7 @@
 import argparse
 import hashlib
 import io
-from application_manifest import compile_manifest, missing
+from application_manifest import compile_manifest, missing, validate_menu_pname
 import json
 import pathlib
 import re
@@ -118,6 +118,11 @@ def validate(files):
     if 'installationManifest' in manifest:
         installation = manifest['installationManifest']
         require(isinstance(installation, dict) and installation.get('schemaVersion') == 1 and isinstance(installation.get('steps'), list) and 1 <= len(installation['steps']) <= 30, '安装清单需要 schemaVersion=1 和 1 至 30 个步骤')
+        for step in installation['steps']:
+            if isinstance(step, dict) and step.get('type') == 'menu':
+                payload = step.get('payload')
+                pname = payload.get('pname') if isinstance(payload, dict) else None
+                validate_menu_pname(pname, f"安装菜单 {step.get('key')} 的 payload.pname")
         render = installation.get('renderConfig')
         require(isinstance(render, dict) and render.get('renderer') in ['iframe', 'shadow-dom'], '渲染方式无效')
         positions = render.get('positions', [])
@@ -245,7 +250,8 @@ def validate(files):
     require(set(files) == expected, '包含未声明文件')
     if 'cloudcc/menu.json' in files:
         menu = json.loads(files['cloudcc/menu.json'])
-        require(menu.get('type') == 'script' and menu.get('tabName') and menu.get('pname'), '需要脚本菜单')
+        require(menu.get('type') == 'script' and menu.get('tabName'), '需要脚本菜单')
+        validate_menu_pname(menu.get('pname'), 'cloudcc/menu.json 的 pname')
         require('__AGENTCICI_SITE_URL__' in menu.get('functioncode', ''), '菜单缺少安装时站点地址占位符')
     return manifest
 
@@ -306,7 +312,7 @@ def package(source, output):
             require((url.scheme == 'https' or url.scheme == 'http' and url.hostname in ('localhost', '127.0.0.1', '::1'))
                     and url.hostname and not url.username and not url.password and not url.query and not url.fragment, 'SDK地址必须是明确的无凭据HTTPS或本机HTTP地址')
             script = (pathlib.Path(__file__).resolve().parent.parent / 'assets/application-menu.js').read_text(encoding='utf-8').replace('__APP_CODE__', json.dumps(config['appCode'])).replace('__SDK_URL__', json.dumps(sdk_url))
-        files['cloudcc/menu.json'] = encode({'tabName': menu['tabName'], 'pname': menu['pname'], 'type': 'script', 'functioncode': script})
+        files['cloudcc/menu.json'] = encode({'tabName': menu['tabName'], 'pname': menu.get('pname'), 'type': 'script', 'functioncode': script})
     for kb in manifest['knowledgeBases']:
         require(isinstance(kb.get('documents'), list) and kb['documents'], '知识库缺少项目源文件声明')
         for name in kb['documents']:

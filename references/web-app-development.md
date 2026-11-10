@@ -134,7 +134,7 @@ const order = result.data;
 
 ## 默认菜单与 iframe 初始化（必须遵守）
 
-创建 Web 应用时，未声明 launchers 则默认生成 `menu` 触发入口并在 `page-content` 展示；显式声明时按用户配置生成入口。菜单类型创建一个 CloudCC 自定义脚本菜单，填写 menu.tabName、menu.pname、menu.type=script 和 menu.functioncode。菜单随应用打包，不把“手动添加菜单”留给安装客户。旧menu.json格式的functioncode保留 `__AGENTCICI_SITE_URL__` 兼容标记；新schemaVersion=2通过installationManifest提供完整JS；实际站点 URL 读取 runtime.webUrl；打包工具原样保留自定义脚本。仅打开新窗口的兼容模板不满足新应用交付要求。
+创建 Web 应用时，未声明 launchers 则默认生成 `menu` 触发入口并在 `page-content` 展示；显式声明时按用户配置生成入口。菜单类型创建一个 CloudCC 自定义脚本菜单，填写 menu.tabName、menu.pname、menu.type=script 和 menu.functioncode。菜单内部标识 `pname` 遵循 [CRM 菜单内部标识规范](application-manifest.md#crm-菜单内部标识)。菜单随应用打包，不把“手动添加菜单”留给安装客户。旧menu.json格式的functioncode保留 `__AGENTCICI_SITE_URL__` 兼容标记；新schemaVersion=2通过installationManifest提供完整JS；实际站点 URL 读取 runtime.webUrl；打包工具原样保留自定义脚本。仅打开新窗口的兼容模板不满足新应用交付要求。
 
 CloudCC 菜单、按钮和浮动入口统一加载目标服务提供的 `sdk/agentcici-app@1.1.0.js`，再以 `appCode` 调用通用宿主 SDK。应用路由、认证、关闭方式和宿主层级必须声明在应用自己的 `application.json`，不要在公共 SDK 或菜单脚本中实现应用专属逻辑。
 

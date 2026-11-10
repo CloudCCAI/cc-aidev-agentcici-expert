@@ -77,6 +77,12 @@ AI应用的源码、资源、文档、构建与发布工作都在 `applications/
 
 脚本字段按资源类型区分：客户端脚本使用 scriptContent，菜单使用 functioncode，按钮使用 tpSysButtonVO.functionCode（大写 C）。打包后核对非空脚本，安装后读取按钮确认保存内容，不能仅以资源 ID 返回判定脚本可用。
 
+## CRM 菜单内部标识
+
+显式声明 `trigger: "menu"` 时，在该入口的 `payload.pname` 填写 CRM 菜单内部标识。它必须匹配 `^[A-Za-z][A-Za-z0-9_]{1,19}$`，即总长 2–20 个字符，以英文字母开头，仅允许英文字母、数字和下划线。例如 `customer_insight`。应用编码 `appCode` 和菜单显示名称分别配置，菜单显示名称可以使用中文。
+
+省略 `launchers` 时，打包器从应用编码生成菜单标识，将连字符换成下划线，超长时保留前缀并追加摘要。显式配置的标识会保留原值。打包后校验 `installationManifest.steps` 中菜单步骤的 `payload.pname`，旧包的 `cloudcc/menu.json` 同样校验 `pname`。出现“菜单配置无效”时，核对已发布版本的安装清单，修正源清单后重新打包并发布新版本。
+
 ## 详情按钮的布局分配
 
 `objects` 指定入口对象范围，`payload.objid` 是实际安装对象标识；`positions` 只控制应用窗口打开后的展示位置，不会把按钮加入 CRM 页面布局。

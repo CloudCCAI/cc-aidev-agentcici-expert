@@ -43,6 +43,12 @@ class PackageTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, '展示位置'):
             self.build()
 
+    def test_rejects_invalid_legacy_menu_pname(self):
+        self.config['menu']['pname'] = 'birthday-mail'
+        (self.root / 'application.json').write_text(json.dumps(self.config))
+        with self.assertRaisesRegex(ValueError, r'cloudcc/menu\.json.*pname'):
+            self.build()
+
     def test_rejects_multiple_agents(self):
         self.config["agents"].append({**self.config["agents"][0], "ref": "second"})
         (self.root / "application.json").write_text(json.dumps(self.config))
@@ -278,6 +284,34 @@ class ResourceManifestTest(unittest.TestCase):
         self.assertEqual(install['steps'][0]['type'], 'menu')
         self.assertEqual(install['steps'][0]['payload']['pname'], 'sisi')
         self.assertIn('AgentCiCiApp.mount({ appCode, launcherId: "default-menu" })', install['steps'][0]['payload']['functioncode'])
+
+    def test_explicit_menu_pname_matches_setup_rules(self):
+        launcher = self.config['launchers'][0]
+        launcher.update(trigger='menu', positions=['page-content'])
+        for value in ('customer-insight-workspace', 'menu-id', '1menu', 'a', 'A' * 21, '菜单', 'menu ', None):
+            with self.subTest(pname=value):
+                launcher['payload'] = {'pname': value}
+                with self.assertRaisesRegex(ValueError, r'sisi_launcher.*payload\.pname'):
+                    self.compiler.compile_manifest(self.config, self.root)
+        for value in ('A0', 'A' + '_' * 18 + '0'):
+            with self.subTest(pname=value):
+                launcher['payload'] = {'pname': value}
+                step = self.compiler.compile_manifest(self.config, self.root)['installationManifest']['steps'][0]
+                self.assertEqual(step['payload']['pname'], value)
+
+    def test_validate_rejects_invalid_pname_in_packaged_menu(self):
+        del self.config['launchers']
+        files = self.build()
+        manifest = json.loads(files['application.json'])
+        manifest['installationManifest']['steps'][0]['payload']['pname'] = 'menu-id'
+        for version in (1, 2):
+            with self.subTest(format_version=version):
+                if version == 2:
+                    manifest['formatVersion'] = manifest['installationManifest']['schemaVersion'] = 2
+                    manifest['cloudccResources'] = []
+                files['application.json'] = app.encode(manifest)
+                with self.assertRaisesRegex(ValueError, r'default-menu.*payload\.pname'):
+                    app.validate(files)
 
     def test_explicit_empty_launchers_remain_invalid(self):
         self.config['launchers'] = []

@@ -1,13 +1,13 @@
 ---
 name: cc-aidev-agentcici-expert
 metadata:
-  version: "1.9.6"
+  version: "1.9.7"
 description: 使用开发者密钥管理 AgentCiCi 组织内智能体、技能、知识库和 MCP 服务，发现并读取 MCP 工具后关联智能体；指导第三方 Web AI 应用开发、CloudCC 自定义对象与自定义类开发、站点与脚本菜单集成，并将前端产物、原生智能体包和技能包整理为发布申请 ZIP 并提交到已部署的接收接口。用于平台资源管理、应用开发与申请包准备；自动安装须先核对服务端能力。
 ---
 
 # AgentCiCi 平台管理
 
-当前技能版本为 `1.9.6`。
+当前技能版本为 `1.9.7`。
 
 本 Skill 同时服务两个阶段：设计阶段先理解模块职责与边界，实施阶段再调用明确的管理 API。不要在不了解现有资源的情况下直接写入。
 
@@ -90,6 +90,8 @@ cloudcc doc fields devguide
 AI 应用开发的工作目录固定在 `applications/<appCode>/`；新建首个应用也采用此结构。不要求读取或修改 AgentCiCi 平台 backend/frontend/deploy 源码，不把平台维护列为应用开发前置步骤。每个应用独立维护 `application.json`、源码、构建和发布产物，根目录共用 `cloudcc-agentcici.config.json`、`cloudcc-cli.config.json` 和 `.cloudcc-cache.json`，多个应用不分别配置AgentCiCi和CRM凭据；源码、对象定义和文档仍在各自应用内。所有 CloudCC 资源放应用 `cloudcc/`，类源码为 `cloudcc/backend/classes/<ClassName>/`。CRM类操作使用 [共用配置适配入口](references/cloudcc-shared-config.md)，以应用 cloudcc 为CLI工程根，临时引用根共享配置；不向项目根创建 backend 类目录或搬移用户源码。详细目录、路径解析、Git 忽略及已有项目处理规则见 [项目与多应用目录](references/application-manifest.md#项目与多应用目录)。开始开发应用前读取该节；遵循用户明确指定的结构，不自动迁移已有项目，不把业务文件放入技能安装目录。
 
 ## 应用入口与安装职责
+
+脚本菜单的 `payload.pname` 必须为 2–20 个字符，以英文字母开头，仅允许英文字母、数字和下划线，例如 `customer_insight`。显式配置菜单时按 [CRM 菜单内部标识规范](references/application-manifest.md#crm-菜单内部标识) 填写并在发布前校验。
 
 新应用的入口脚本向 `agentcici-app@1.1.0.js` 传 `appCode` 和稳定的 `launcherId`，不要传 name/icon/position。名称、图标、触发方式与入口级渲染配置保存到资源清单；公共 SDK 按 appCode 请求 setup runtime 的已安装快照。全局浮点使用 `start({appCode, launcherId})`，菜单/脚本按钮使用 `mount({appCode, launcherId})`。入口浮点、拖动、去重和清理属于公共 SDK，不在每个应用复制一份。
 

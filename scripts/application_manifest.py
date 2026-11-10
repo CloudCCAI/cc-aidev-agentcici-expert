@@ -15,6 +15,11 @@ TRIGGER_POSITIONS = {'global-floating': {'global-floating', 'global-right', 'ful
                      'detail-button': {'detail-right'}, 'list-button': {'list-right'}}
 
 
+def validate_menu_pname(value, field):
+    if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]{1,19}', value):
+        raise ValueError(f'{field} 必须为 2–20 个字符，以英文字母开头，仅允许英文字母、数字和下划线')
+
+
 def default_launchers(config):
     app_code = config.get('appCode', '')
     name = config.get('name', '')
@@ -219,6 +224,7 @@ def compile_manifest(config, root):
         if kind == 'clientScript':
             payload.update(scriptName=launcher['name'], scriptContent=script)
         elif kind == 'menu':
+            validate_menu_pname(payload.get('pname'), f'菜单入口 {key} 的 payload.pname')
             payload.update(tabName=launcher['name'], type='script', functioncode=script)
         else:
             if not payload.get('objid') or not isinstance(payload.get('tpSysButtonVO'), dict):
