@@ -8,6 +8,8 @@
 
 导出保存的是草稿快照，包含技能快照和知识/工具依赖引用。导入前读取 preview 返回的依赖、选项和警告，按实际 ImportCommand 契约映射目标组织资源，避免按名称猜 ID；新建后仍需配置运行身份/渠道与发布。应用清单 skillBindings 将包内技能 ref 映射到独立技能 ZIP 的 ref，安装器据此复用已导入技能，避免双份创建。
 
+`agent.json` 可携带 `toolRuntimePolicies`，键使用包内可移植工具 ref，不使用源组织工具 ID。导入时平台按工具映射恢复策略并重新执行字段、范围和工具类型校验；旧包缺少该字段时保持兼容。托管联网策略不包含 API Key、Host 或其他凭据，凭据仍由目标平台集成和模型场景路由管理。导入或升级后重新编译发布，运行版本才会使用新策略。
+
 ## 技能 ZIP
 
 已有技能 CRUD 见 [skills.md](skills.md)。后台 POST `/skills/{id}/exports` 创建导出，随后 GET `/skills/exports/{exportId}/download` 下载；未发布草稿导出需要明确选择 allowDraft。后台 POST `/skills/imports` 上传 multipart file，预览后 POST `/skills/imports/{importId}/create` 创建。平台支持的上传包格式以实际预览结果为准；不要将任意 SKILL.md ZIP 声称为已验证可导入。

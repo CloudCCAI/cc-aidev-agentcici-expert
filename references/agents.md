@@ -58,6 +58,46 @@ python3 /installed/agentcici/scripts/agentcici_manage.py agents publish AGENT_ID
 python3 /installed/agentcici/scripts/agentcici_manage.py agents delete AGENT_ID --confirm-id AGENT_ID
 ```
 
+## 托管联网工具访问策略
+
+智能体绑定 `managed_web_search` 或 `managed_web_extract` 后，可在同一次 `bind-tools` 请求中提交 `toolRuntimePolicies`。这是服务端可信策略，不要把超时和次数字段写进提示词或让模型作为工具参数传入。
+
+```json
+{
+  "toolIds": ["managed_web_search", "managed_web_extract"],
+  "toolLoadingModes": {
+    "managed_web_search": "always-on",
+    "managed_web_extract": "always-on"
+  },
+  "toolRuntimePolicies": {
+    "managed_web_search": {
+      "preset": "CUSTOM",
+      "singleCallTimeoutMs": 30000,
+      "maxCallsPerRun": 1,
+      "maxOutputTokens": 1024,
+      "responseMode": "SOURCES_FIRST",
+      "reasoningEffort": "LOW",
+      "maxReturnedSources": 10,
+      "sourceCollectionWindowMs": 1200,
+      "minReturnedSources": 5,
+      "minDistinctDomains": 3,
+      "maxSourcesPerDomain": 2
+    },
+    "managed_web_extract": {"preset": "FAST"}
+  }
+}
+```
+
+```bash
+python3 /installed/agentcici/scripts/agentcici_manage.py agents bind-tools AGENT_ID --file /absolute/path/web-tools.json
+```
+
+预设为 `FAST`、`BALANCED`、`DEEP`；需要逐项设置时使用 `CUSTOM`。搜索可配置 `singleCallTimeoutMs`（10000–120000）、`maxCallsPerRun`（1–3）、`maxOutputTokens`（256–4096）、`responseMode`（`SOURCES_FIRST`/`FULL_ANSWER`）、`reasoningEffort`（`LOW`/`BALANCED`）、`maxReturnedSources`（1–50）、`sourceCollectionWindowMs`（0–5000）、`minReturnedSources`（1–20）、`minDistinctDomains`（1–10）和 `maxSourcesPerDomain`（1–5）；`minReturnedSources` 不得大于 `maxReturnedSources`。抓取可配置超时、调用次数（1–10）、输出上限（512–8192）、推理档位、`alternateSourceOnce` 与 `maxContentChars`（5000–100000）。
+
+`SOURCES_FIRST` 从首批有效结构化来源开始计算短窗口，并在来源数量与独立域名门槛满足、来源上限到达或窗口结束时返回。窗口与域名限制只影响 AgentCiCi 接收和筛选结果的方式；它们不会要求百炼必须检索指定数量的网站，也不会限制百炼单请求内部轮数。需要真正控制搜索策略、时效或站点范围时，应评估 DashScope 等支持对应参数的协议，不能把这些字段塞进 Responses 请求。
+
+`maxCallsPerRun` 只限制 AgentCiCi 外层工具调用。百炼 Responses 在一次请求内仍可能自主执行多轮 `web_search_call`/`web_extractor_call`，当前协议没有可兑现的上游次数硬限制；不要使用 Responses 不支持的 `search_strategy`、`forced_search` 或 Anthropic `max_uses`。实时对话优先 `FAST/SOURCES_FIRST`；深度调研才使用 `DEEP/FULL_ANSWER`。读取智能体详情时回读 `toolRuntimePolicies`，编译发布后再核对新策略进入运行版本。
+
 示例中的 `DRAFT_VERSION_NO` 必须替换为本次编译返回的 `draftVersionNo` 正整数，不写死版本号。编译会保存新草稿版本；先检查编译结果，再发布该版本，后端执行现有发布校验。通用发布不添加 API 渠道；开启运行 OpenAPI 参考运行接口文档。
 
 生日邮件示例顺序：创建/编辑邮件技能 → 编译并发布技能 → 创建/编辑智能体 → 关联技能、知识库、工具 → 编译智能体 → 发布返回的版本。定义编辑和关联修改只有重新编译发布后才进入新的运行版本。

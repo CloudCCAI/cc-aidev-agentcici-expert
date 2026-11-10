@@ -304,8 +304,14 @@ def execute(client, args):
     if args.command.startswith("bind-"):
         field = {"bind-skills": "bindings", "bind-knowledge": "knowledgeBaseIds", "bind-tools": "toolIds"}[args.command]
         body = read_payload(args)
-        if set(body) != {field} or not isinstance(body[field], list):
-            raise RuntimeError("请求必须仅包含列表字段 " + field)
+        allowed = {field, "toolLoadingModes", "toolRuntimePolicies"} if args.command == "bind-tools" else {field}
+        if field not in body or not isinstance(body[field], list) or not set(body).issubset(allowed):
+            raise RuntimeError("请求必须包含列表字段 " + field + "，且只能使用该绑定支持的配置字段")
+        if args.command == "bind-tools":
+            if "toolLoadingModes" in body and not isinstance(body["toolLoadingModes"], dict):
+                raise RuntimeError("toolLoadingModes 必须是对象")
+            if "toolRuntimePolicies" in body and not isinstance(body["toolRuntimePolicies"], dict):
+                raise RuntimeError("toolRuntimePolicies 必须是对象")
         return client.request("PUT" if field == "bindings" else "PATCH",
                               path + ("/skills" if field == "bindings" else ""), body)
     if args.resource_id != args.confirm_id:

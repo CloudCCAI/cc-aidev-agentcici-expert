@@ -53,6 +53,14 @@ class ManagementTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.run_command('agents', 'bind-skills', 'a', '--json', '{}')
 
+    def test_tool_binding_accepts_runtime_policies(self):
+        body = {'toolIds': ['managed_web_search'],
+                'toolLoadingModes': {'managed_web_search': 'always-on'},
+                'toolRuntimePolicies': {'managed_web_search': {'preset': 'FAST'}}}
+        import json
+        client = self.run_command('agents', 'bind-tools', 'a', '--json', json.dumps(body))
+        client.request.assert_called_once_with('PATCH', '/openapi/v1/management/agents/a', body)
+
     def test_knowledge_access_routes_preserve_role_ids_and_version(self):
         path = '/openapi/v1/management/knowledge-bases/30/access'
         client = self.run_command('knowledge', 'get-access', '30')

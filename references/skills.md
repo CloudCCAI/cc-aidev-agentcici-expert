@@ -55,3 +55,25 @@ python3 /installed/agentcici/scripts/agentcici_manage.py skills delete SKILL_ID 
 ```
 
 检查编译警告后再发布，确认返回 `currentPublishedVersionId`。技能更新不会自动改变智能体已固定的发布快照；需要重新编译发布关联智能体。
+
+## 任务级托管联网收紧策略
+
+需要为某一明确业务任务进一步限制联网时，可在可信的已发布技能提示中使用版本化 `cici-task-profile`，由平台解析 `execution.managedWeb`。该配置只从已加载技能快照读取，不从用户消息、附件或网页内容读取。
+
+```cici-task-profile
+{
+  "version": 2,
+  "intentKeywords": ["招标", "公告"],
+  "tools": ["managed_web_search", "managed_web_extract"],
+  "execution": {
+    "managedWeb": {
+      "maxSearchCalls": 1,
+      "maxExtractCalls": 2,
+      "maxRuntimeMillis": 90000,
+      "alternateExtractOnce": true
+    }
+  }
+}
+```
+
+范围为搜索1–3次、抓取1–10次、总预算30000–360000毫秒。任务策略只能收紧智能体 `toolRuntimePolicies`，不能扩大绑定策略；智能体长期默认访问方式应配置在工具绑定上，不要为通用超时控制新建一个无业务意图的技能。两层次数都只约束 AgentCiCi 外层调用，不能限制百炼 Responses 单请求内部的自主检索轮数。
