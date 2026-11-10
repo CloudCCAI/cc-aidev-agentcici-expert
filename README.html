@@ -19,7 +19,7 @@
 </head>
 <body><main>
   <h1>AgentCiCi 开发与管理 Skill</h1>
-  <section class="summary"><strong>阅读摘要</strong><p>这是一个给 Codex 等 AI 智能体使用的 Skill。用户不需要手动运行管理脚本，只需要用自然语言说明目标。当前版本为 <code>1.9.8</code>。</p></section>
+  <section class="summary"><strong>阅读摘要</strong><p>这是一个给 Codex 等 AI 智能体使用的 Skill。用户不需要手动运行管理脚本，只需要用自然语言说明目标。当前版本为 <code>2.0.1</code>。</p></section>
   <p>AI应用开发只在 <code>applications/&lt;appCode&gt;/</code> 进行，不需要平台backend/frontend/deploy源码。每个应用独立维护清单、源码与发布产物；CloudCC资源集中在 <code>cloudcc/</code>，类为 <code>cloudcc/backend/classes/</code>。项目根目录共用配置和CRM缓存，适配器临时链接后在应用cloudcc工程内操作，不创建根backend映射。<a href="references/application-manifest.md#项目与多应用目录">查看目录规则</a>。已有项目保留其结构，不自动迁移。</p>
   <p><a href="references/development-workflow.md">AI App七阶段流程</a>涵盖Web、对象/字段、自定义类，以及智能体、技能、知识库和MCP关联；AgentCiCi与CRM开发凭据分别配置。知识库开发者管理与组织应用发布需部署对应后端并授予scope。</p>
   <p>Web 使用原生 HTML、CSS、JavaScript；业务按需采用 Web → 自定义类 → 自定义对象、Web → Agent（智能体）两条调用链。</p>
@@ -28,6 +28,9 @@
     <li><a href="#web">AI Web 应用</a></li><li><a href="#release">发布申请</a></li><li><a href="#principles">操作原则</a></li>
   </ul></nav>
 
+  <h2>2.0.1 更新说明</h2><p>CloudCC CRM 应用进入实现设计和开发前，必须配置并验证 CRM 开发凭据。涉及 AgentCiCi 资源管理或应用发布时，同步验证 AgentCiCi 开发者凭据。详见<a href="references/development-workflow.md#2-配置并验证开发凭据">开发凭据校验</a>。</p>
+  <h2>2.0.0 更新说明</h2><p>CRM 内嵌应用接入智能体时默认用 <code>cloudcc</code>。只有明确确认智能体无需当前 CRM 用户会话时才用 <code>standard</code>。详见<a href="references/agent-runtime-openapi.md#运行-key-选型与排查">运行 Key 选型与排查</a>。</p>
+  <h2>1.9.9 更新说明</h2><p>明确区分普通对话与按当前 CRM 用户调用工具的运行 Key，并补充 <code>cloudcc_context_not_allowed</code> 排查。详见<a href="references/agent-runtime-openapi.md#运行-key-选型与排查">运行 Key 选型与排查</a>。</p>
   <h2>1.9.8 更新说明</h2><p>对象定义省略 <code>accessable</code> 时，打包器向包内对象定义写入 <code>"2"</code>（公用读写）。显式声明的权限按源清单打包。</p>
   <h2>1.9.7 更新说明</h2><p>补充 CRM 菜单内部标识 <code>pname</code> 的字符和长度规则。清单检查、打包及发布前的应用包校验会拒绝无效值，并指出对应的菜单字段。</p>
   <h2>1.9.6 更新说明</h2><p>AI 应用项目必须在开始工作前读取或补建根目录的 <code>AGENTS.md</code>。仅有 <code>CLAUDE.md</code> 时保留原文并补齐规则索引。</p>

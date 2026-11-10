@@ -1,13 +1,13 @@
 ---
 name: cc-aidev-agentcici-expert
 metadata:
-  version: "1.9.8"
+  version: "2.0.1"
 description: 使用开发者密钥管理 AgentCiCi 组织内智能体、技能、知识库和 MCP 服务，发现并读取 MCP 工具后关联智能体；指导第三方 Web AI 应用开发、CloudCC 自定义对象与自定义类开发、站点与脚本菜单集成，并将前端产物、原生智能体包和技能包整理为发布申请 ZIP 并提交到已部署的接收接口。用于平台资源管理、应用开发与申请包准备；自动安装须先核对服务端能力。
 ---
 
 # AgentCiCi 平台管理
 
-当前技能版本为 `1.9.8`。
+当前技能版本为 `2.0.1`。
 
 本 Skill 同时服务两个阶段：设计阶段先理解模块职责与边界，实施阶段再调用明确的管理 API。不要在不了解现有资源的情况下直接写入。
 
@@ -26,7 +26,11 @@ description: 使用开发者密钥管理 AgentCiCi 组织内智能体、技能�
 
 新建或接手 AI 应用项目时，必须先按 [项目规则入口](references/application-manifest.md#项目规则入口) 在项目根目录读取或补建 `AGENTS.md`，再进入需求与设计。只有旧 `CLAUDE.md`（含 `Claude.md` 等大小写写法）时，创建 `AGENTS.md` 并用相对 Markdown 链接索引旧规则，保留原文件内容。
 
-创建或继续开发AI应用时，先读 [AI App七阶段开发流程](references/development-workflow.md)，按需求讨论、设计、平台文档、开发、本地联调、打包发布、CRM菜单系统功能测试推进。每个应用在自身docs中保存需求、设计与测试记录。资源范围含Web、对象/字段、自定义类、智能体、技能、知识库和MCP工具，按业务需要创建并关联；安装协议亦对齐现有触发器、定时类和验证规则能力；触发器默认禁用、定时类不自动创建调度，按目标安装器能力验收。启动先分别检查AgentCiCi与CloudCC CRM两套开发配置，不混用凭据，测试密钥及缓存不得入发布包。CRM系统测试限当前用户桌面业务流程，不默认多用户、多角色或移动端测试。
+创建或继续开发AI应用时，先读 [AI App七阶段开发流程](references/development-workflow.md)，按需求讨论、凭据校验、实现设计、开发、本地联调、打包发布、CRM 菜单系统功能测试推进。每个应用在自身docs中保存需求、设计与测试记录。资源范围含Web、对象/字段、自定义类、智能体、技能、知识库和MCP工具，按业务需要创建并关联；安装协议亦对齐现有触发器、定时类和验证规则能力；触发器默认禁用、定时类不自动创建调度，按目标安装器能力验收。开发凭据、测试密钥及缓存仅保存在本机私密配置中。CRM系统测试限当前用户桌面业务流程，不默认多用户、多角色或移动端测试。
+
+### CRM 应用开工前验证开发凭据
+
+新建或接手 CloudCC CRM 应用时，先确认目标开发环境和组织。必须配置并验证 CloudCC CRM 开发凭据。应用需要管理 AgentCiCi 资源或走 AgentCiCi 应用发布流程时，也必须配置并验证该环境的 AgentCiCi 开发者凭据。任何必需凭据缺失、无效或指向错误环境时，先说明需要补齐的配置，验证通过后再进入实现设计和开发。按[开发凭据校验](references/development-workflow.md#2-配置并验证开发凭据)执行。
 
 ### AI 应用的智能体、技能与工具选择
 
@@ -38,7 +42,9 @@ description: 使用开发者密钥管理 AgentCiCi 组织内智能体、技能�
 
 ## CRM 组织与 AI 资源归属
 
-普通 AI 应用按标准 SDK/API Key 调用；后端以 API Key 所属 AgentCiCi 租户检查授权和计费。不要自行生成 `crmwb_` 身份、传入收费租户或复制官方应用专用认证流程。
+CRM 内嵌应用接入智能体时，默认在 `application.json` 显式设 `agent.keyType: "cloudcc"`，用同一宿主运行上下文的 Key 和当前 CRM 用户会话发请求。只有明确确认智能体无需当前 CRM 用户会话时，才显式设为 `standard`，并从 `chat-messages` 请求体省略整个 `cloudccContext`。联调和安装后按[运行 Key 选型与排查](references/agent-runtime-openapi.md#运行-key-选型与排查)核对实际类型。
+
+普通对话的授权和计费由后端按 API Key 所属 AgentCiCi 租户处理。应用不得自行生成 `crmwb_` 身份、指定收费租户或复制官方应用专用认证流程。
 
 官方 CRM 专用会话保留 CRM 业务隔离身份，通过开户保存的 CRM orgId → AgentCiCi companyId 映射解析正式资源租户。授权、模型配置、语音和模型 Credits 均归正式租户；映射缺失必须明确报错，不能回退到独立赠送额度。验收核对实际用量事件及结算租户，不能只看页面可打开或请求成功。
 
@@ -49,7 +55,7 @@ AI 应用涉及新建或修改 CloudCC 自定义类、对象、字段时，必�
 - 检查当前工具的技能目录：必须有该技能的 `SKILL.md` 和可运行的 `tools/bin/cloudcc`。Codex 使用 `${CODEX_HOME:-$HOME/.codex}/skills/cc-customization-expert-msapi`；其他工具使用其实际技能目录，不把项目源码目录视为已安装。
 - 未安装时，先从上述仓库安装完整技能包，再读取其 `SKILL.md` 并运行包内 `tools/bin/cloudcc --version`。Codex 优先使用 `skill-installer` 的 `scripts/install-skill-from-github.py --repo CloudCCAI/cc-customization-expert-msapi --path . --name cc-customization-expert-msapi`；仓库根目录就是技能根目录，不能只下载 `SKILL.md`。其他工具使用自身支持的技能安装方式。已安装时复用，不覆盖现有技能或环境配置；安装不完整时报告缺失项。
 - **设计前先获取文档**：涉及自定义类、对象或字段时，必须先执行下列对应资源的两条命令，读取 `introduction`（资源介绍）和 `devguide`（开发指南），再进行该资源的设计、定义或源码生成。涉及多类资源时，逐类读取两份文档；不能先设计后补读，也不能等到开发或发布前才读。这里的 `cloudcc` 指已安装专用技能内的 `tools/bin/cloudcc`，实际调用使用该程序的绝对路径，不依赖全局 CLI。
-- 技能安装失败、CLI 不可运行或对应文档无法读取时，不继续猜测并生成这些资源；说明具体缺失，仍可继续不依赖这些资源的前端工作。
+- 技能安装失败、CLI 不可运行或对应文档无法读取时，不继续猜测并生成这些资源；说明具体缺失。开发凭据已验证时，可继续不依赖这些资源的前端工作。
 
 设计前按资源类型执行：
 

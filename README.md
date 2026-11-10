@@ -12,7 +12,19 @@
 - 开发 AI Web 应用，生成 CloudCC 菜单、按钮或全局入口。
 - 准备、校验和提交 AI 应用发布申请包。
 
-当前版本为 `1.9.8`。
+当前版本为 `2.0.1`。
+
+## 2.0.1 更新说明
+
+- CloudCC CRM 应用进入实现设计和开发前，必须配置并验证目标环境的 CRM 开发凭据。涉及 AgentCiCi 资源管理或应用发布时，同步验证 AgentCiCi 开发者凭据。详见[开发凭据校验](references/development-workflow.md#2-配置并验证开发凭据)。
+
+## 2.0.0 更新说明
+
+- CRM 内嵌应用接入智能体时默认用 `cloudcc`。只有明确确认智能体无需当前 CRM 用户会话时才用 `standard`。详见[运行 Key 选型与排查](references/agent-runtime-openapi.md#运行-key-选型与排查)。
+
+## 1.9.9 更新说明
+
+- 明确区分普通对话与按当前 CRM 用户调用工具的运行 Key，补充源清单、发布包、安装运行时的核对方法及 `cloudcc_context_not_allowed` 排查。详见[运行 Key 选型与排查](references/agent-runtime-openapi.md#运行-key-选型与排查)。
 
 ## 1.9.8 更新说明
 

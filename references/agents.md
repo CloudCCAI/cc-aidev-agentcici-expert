@@ -72,7 +72,7 @@ python3 /installed/agentcici/scripts/agentcici_manage.py agents delete AGENT_ID 
 | 创建 | `POST /openapi/v1/management/agents/{agentId}/api-keys` |
 | 撤销 | `POST /openapi/v1/management/agents/{agentId}/api-keys/{credentialId}/revoke` |
 
-创建请求 `name` 必填；可选字段为 `expiresAt`（UTC ISO 时间）、`allowedIps`、`rateLimitPerMinute`、`dailyQuota`、`maxPromptChars`、`maxResponseChars`、`allowStream`、`allowTraceRead`、`scopes`、`keyType`、`principalMemberId`。`runAsUserId` 仅为旧字段，当前服务端拒绝新建时传入非空值。普通应用使用 `keyType: "standard"`，不要自行使用 CloudCC 专用身份。`principalMemberId` 如指定，必须是本组织可用的 API_CLIENT 服务成员；省略时由服务端创建受管运行身份。普通调用可选 `scopes: ["chat"]`；省略时由服务端应用默认 scope，不等同于开发者 scope。
+创建请求 `name` 必填；可选字段为 `expiresAt`（UTC ISO 时间）、`allowedIps`、`rateLimitPerMinute`、`dailyQuota`、`maxPromptChars`、`maxResponseChars`、`allowStream`、`allowTraceRead`、`scopes`、`keyType`、`principalMemberId`。`runAsUserId` 仅为旧字段，当前服务端拒绝新建时传入非空值。创建本地测试 Key 时按[运行 Key 选型](agent-runtime-openapi.md#运行-key-选型与排查)显式传 `keyType`。下方示例用于不传 CRM 会话的普通对话。CRM 安装后的应用从宿主取得安装实例的 Key。`principalMemberId` 如指定，必须是本组织可用的 API_CLIENT 服务成员；省略时由服务端创建受管运行身份。普通调用可选 `scopes: ["chat"]`；省略时由服务端应用默认 scope，不等同于开发者 scope。
 
 创建运行密钥时，默认显式传入 `maxPromptChars: 64000`（输入字符上限，含消息和页面信息）和 `maxResponseChars: 128000`（回答字符上限），不要依赖服务端较低的默认值。CLI 自动补齐未指定的字段；通过 Python `Client` 或其他方式直接调用时也须传入这两个默认值。用户明确指定其他上限时使用其指定值。
 
