@@ -20,13 +20,15 @@
 | 部分编辑 | `PATCH /openapi/v1/management/agents/{agentId}` | `agent.write` |
 | 软删除 | `DELETE /openapi/v1/management/agents/{agentId}` | `agent.delete` |
 
-创建至少需要 `agentId`、`name`、`model`。编辑只发送要改变的字段；绑定字段传空数组表示清空。删除前确认 `builtin=false`，历史版本、运行和审计证据仍会保留。
+当前创建接口至少需要 `agentId`、`name`、`model`。`model` 是历史兼容字段，统一传 `"platform-scene"`，无需创建者指定具体型号；实际对话模型由平台统一指定，智能体无法自行选择或切换。省略 `model` 仍会触发当前接口的必填校验。
+
+编辑只发送要改变的字段，不通过修改 `model` 切换实际运行模型；绑定字段传空数组表示清空。删除前确认 `builtin=false`，历史版本、运行和审计证据仍会保留。
 
 ```json
 {
   "agentId": "support-agent",
   "name": "售后智能体",
-  "model": "qwen3.7-plus",
+  "model": "platform-scene",
   "summary": "回答售后问题，复杂事项转人工",
   "safetyLevel": "STRICT",
   "executionMode": "COPILOT"
