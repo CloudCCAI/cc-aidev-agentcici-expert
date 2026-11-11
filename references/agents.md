@@ -100,6 +100,19 @@ python3 /installed/agentcici/scripts/agentcici_manage.py agents bind-tools AGENT
 
 `maxCallsPerRun` 只限制 AgentCiCi 外层工具调用。百炼 Responses 在一次请求内仍可能自主执行多轮 `web_search_call`/`web_extractor_call`，当前协议没有可兑现的上游次数硬限制；不要使用 Responses 不支持的 `search_strategy`、`forced_search` 或 Anthropic `max_uses`。实时对话优先 `FAST/SOURCES_FIRST`；深度调研才使用 `DEEP/FULL_ANSWER`。读取智能体详情时回读 `toolRuntimePolicies`，编译发布后再核对新策略进入运行版本。
 
+### 联网结果证据状态
+
+调用方必须读取 `evidenceStatus`，不能只看模型是否生成了 `answer`：
+
+- `SUCCESS_WITH_EVIDENCE`：工具正常结束，且存在可审计结构化来源。
+- `PARTIAL_WITH_EVIDENCE`：已经取得可审计来源，但来源窗口提前结束、流中断或上游随后失败。可以使用 `sources`，同时向用户说明结果不完整；`terminalErrorCode` 和 `earlyReturnReason` 用于诊断。
+- `COMPLETED_WITHOUT_EVIDENCE`：上游生成了文字但没有结构化来源，工具返回 `success:false` 和 `MANAGED_WEB_NO_AUDITABLE_SOURCES`。不得把回答正文中的链接补写成已核验引用。
+- `FAILED_WITHOUT_EVIDENCE`：调用失败且没有可用来源。
+
+`sources` 可包含 `url`、`title`、`summary`、`domain` 和 `sourceType`。搜索后先按子问题、来源类型和相关性筛选摘要；只有摘要不足的字段再调用 `managed_web_extract` 精读少量 URL。交易所/披露平台、政府监管机构和研究机构可由 `sourceType` 辅助排序，但来源类型不等于事实已核验。网页抓取先进行安全直读：连接最多 2 秒、首字节等待最多 3 秒，收到合法文本响应后直读总计最多 8 秒；预算允许时至少为百炼回退保留 20 秒。`directRead.status`、`httpStatus`、`firstByteLatencyMs`、`bytesRead` 和 `finalUrl` 用于区分站点、正文下载及中间网络问题，这些平台安全预算不作为工具绑定参数暴露。
+
+用户明确要求“至少 N 个来源／链接／引用”时，最终回答会从本轮 `sources` 账本补足相关引用；补齐不会重新调用联网工具。账本本身不足时必须说明实际数量，不得用无关链接凑数。`minReturnedSources` 控制工具层收集目标，不等同于模型一定展示的引用数；验收必须同时检查工具来源和最终回答。
+
 示例中的 `DRAFT_VERSION_NO` 必须替换为本次编译返回的 `draftVersionNo` 正整数，不写死版本号。编译会保存新草稿版本；先检查编译结果，再发布该版本，后端执行现有发布校验。通用发布不添加 API 渠道；开启运行 OpenAPI 参考运行接口文档。
 
 生日邮件示例顺序：创建/编辑邮件技能 → 编译并发布技能 → 创建/编辑智能体 → 关联技能、知识库、工具 → 编译智能体 → 发布返回的版本。定义编辑和关联修改只有重新编译发布后才进入新的运行版本。

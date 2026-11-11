@@ -45,6 +45,12 @@ curl -X POST "${AGENTCICI_API_BASE%/}/chat-messages" \
 - `responseMode` 使用 `blocking` 获取 JSON，或 `streaming` 获取 SSE。
 - 后续轮次传回 `conversationId`；有副作用的请求应设置稳定的 `Idempotency-Key`。
 
+### 并发额度与重试
+
+租户运行并发额度暂时用尽时，阻塞调用返回 HTTP 429／`runtime_concurrency_exceeded` 和 `Retry-After`；已经建立 HTTP 200 SSE 的流式调用通过 `error` 事件返回同一错误码。错误详情中的 `retryable=true` 和 `retryAfterMs` 表示可以有界退避；调用方等待建议时间后重试，最多两次，并继续复用原幂等键。不要把该错误显示为百炼、模型或工具 502，也不要无间隔并发重放。HTTP 500、502 和无证据工具失败不适用此退避规则，应按各自错误码诊断。
+
+阻塞回答使用托管联网搜索且取得结构化来源时，响应 `data.runtime.webSources` 返回本轮来源账本的 URL、标题和域名，供严格 JSON 输出或应用自己的来源区域使用。该账本只证明搜索上游返回了结构化来源，不等于网页正文已经通过 `managed_web_extract` 核验。
+
 ## 运行端点
 
 以下路径均相对于 `apiBase`，表中的开头斜杠仅用于与基地址拼接。
