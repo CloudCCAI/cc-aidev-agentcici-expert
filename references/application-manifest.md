@@ -56,7 +56,7 @@ AI应用的源码、资源、文档、构建与发布工作都在 `applications/
 - host 为必填对象，使用最新统一宿主协议：closeBehavior 只能是 hide/confirm-destroy，hostLayer 只能是 content/assistant。需要 CloudCC SSO 票据的 iframe 应用在 host.authentication 中声明 type=cloudcc-sso-ticket、query、targetPath、ticketPrefix 和可选 localeParam；这些业务值属于应用清单，公共 SDK 不按 appCode 写死。
 - connectedApplications可选布尔，缺省为true并创建连接应用；只有用户明确不需要 CloudCC 身份/OpenAPI 时才写false。不要扩展为客户端权限对象。
 - agent可选且最多一个：platform包含type/ref，仅引用管理 API 已确认 `builtin=true` 的当前 org 内置实例；组织已有的 `builtin=false` 智能体仍属custom，选用前按 [类型核验规则](ai-applications.md#选用智能体前核验类型) 查询；不能附file/skills/knowledges以重绑客户资源。custom包含type/ref/file，skills每项ref/file/bindingRef，knowledges每项ref/name/bindingRef/documents（knowledge/<ref>/源文件路径数组）。bindingRef来自原生智能体导出的依赖ref。可选keyType为cloudcc或standard；新应用按[运行 Key 选型](agent-runtime-openapi.md#运行-key-选型与排查)显式设置。CRM 内嵌应用默认用 `cloudcc`，只有明确确认智能体无需当前 CRM 用户会话时才用 `standard`。为兼容旧清单，省略该字段仍编译为 `cloudcc`。
-- launchers 可选；Web 应用未声明时，打包器默认生成一个 `menu` 入口，展示位置为 `page-content`，菜单名使用应用名称，内部标识由 appCode 安全生成。显式提供时必须是非空数组；每项id（稳定且唯一）、name、trigger、positions（有序）、payload（查询确认的CRM安装字段）；可选icon/order/objects/placement/renderer/entry。打包器生成完整启动JS并传 appCode + launcherId；每个入口的 renderer 和 entry 可覆盖应用默认值。file仅用于确有业务自定义脚本的场景，必须位于应用目录内，内容原样打包。菜单图标和排序须映射为CRM payload字段，不能假定各入口字段相同。脚本菜单可设 `sisiShortcut: true`，由安装回执中的菜单 ID 生成思思快捷链接。
+- launchers 可选；Web 应用未声明时，打包器默认生成一个 `menu` 入口，展示位置为 `page-content`，菜单名使用应用名称，内部标识由 appCode 安全生成。显式提供时必须是非空数组；每项id（稳定且唯一）、name、trigger、positions（有序）、payload（查询确认的CRM安装字段）；可选icon/order/objects/placement/renderer/entry/selectors。打包器生成完整启动JS并传 appCode + launcherId；详情右侧入口还将显式提供的 selectors 写入按钮脚本，每个入口的 renderer 和 entry 可覆盖应用默认值。file仅用于确有业务自定义脚本的场景，必须位于应用目录内，内容原样打包。菜单图标和排序须映射为CRM payload字段，不能假定各入口字段相同。脚本菜单可设 `sisiShortcut: true`，由安装回执中的菜单 ID 生成思思快捷链接。
 - installationManifest 同时保存 application（appCode/name/summary）、launchers（入口元数据）、renderConfig 和 steps（完整JS与资源字段）。SDK地址占位符 `__AGENTCICI_SDK_URL__` 由setup-svc根据服务端AgentCiCi域名解析，不需要客户填写name/icon/position或硬编码环境域名。
 - 同一应用每种trigger最多配置一项；这一项可配置多个不重复的positions，第一项为默认位置，其余可切换。入口 id 用于安装资源回执和 SDK 入口级配置选择。
 
@@ -99,9 +99,45 @@ AI应用的源码、资源、文档、构建与发布工作都在 `applications/
 {
   "trigger": "detail-button",
   "positions": ["detail-right"],
+  "selectors": {"detail-right": "div[devid=\"detail002\"]"},
   "placement": "allObjectDetailLayouts"
 }
 ```
+
+## 详情按钮的 DOM 选择器
+
+创建详情页自定义按钮并在右侧展开应用时，必须先在目标 CRM 的对应对象详情页核验挂载容器，再将 DOM 选择器写入按钮脚本。布局分配决定按钮是否可见，选择器决定应用挂到哪里，两项都要验收。
+
+- 自动生成按钮脚本：在源清单对应 launcher 配置 `selectors: {"detail-right": "实际核验的CSS选择器"}`。打包器把它写入 `installationManifest.steps[].payload.tpSysButtonVO.functionCode` 的 `AgentCiCiApp.mount` 参数；`check` 报告缺失字段，打包时拒绝缺失、空白或非字符串的选择器。
+- 自定义 `file`：脚本原样打包，开发者必须在其中显式传入同一参数；打包器不解析任意 JavaScript 来推断或补写 DOM。不要只在清单里填写选择器而漏改自定义脚本。
+- DOM 选择器属于按钮启动脚本，不放进 SDK 或 `renderConfig`；SDK 只负责使用传入值。不能依赖已部署旧 SDK 中写死的默认选择器，不能由对象 API Name、记录 ID 或编号拼出未经验证的选择器。
+- 上节的 `div[devid="detail002"]` 仅是已核验 AP6 商机页的示例，不是所有对象或环境的默认值。同一按钮支持多个对象时，应逐一核验；只在确实需要且验证通过时组合多个选择器，并确保当前页命中唯一、正确的可见容器。
+
+按钮脚本调用示例（公共 SDK 加载完成后；以下选择器同样仅示例 AP6 商机页）：
+
+```js
+window.AgentCiCiApp.mount({
+  appCode,
+  launcherId,
+  selectors: { 'detail-right': 'div[devid="detail002"]' }
+});
+```
+
+发布前读取包内 `functionCode`，确认选择器已经进入按钮脚本；安装后回读 CRM 按钮脚本并真实点击，验收右侧展开、关闭、重复打开及切换记录。仅修改开发技能或源清单不会修复线上已经安装的按钮。
+
+## 其他入口的 DOM 依赖与当前边界
+
+2026-11-11 按技能生成器与公共 SDK 源码逐项核对，以下是现有实现依赖，不是可跨环境照抄的 DOM 配置：
+
+| 入口或展示方式 | 当前 DOM 依赖 | 所在位置与处理边界 |
+| --- | --- | --- |
+| 列表按钮／列表右侧 | `.home > .center > .bottom > .mainBody > .main-box > .el-main` | SDK 默认值；技能生成脚本目前不传 `selectors`，自定义脚本需核验后显式传入 `selectors['list-right']`。 |
+| 脚本菜单／菜单内容区 | `.console-right-content` | SDK 默认值；普通生成脚本及旧 `assets/application-menu.js` 均未传选择器，不能仅给源清单添加字段就认为已经进入脚本。 |
+| 全局浮点切换固定右侧 | `.home > .center > .bottom > .mainBody`，占位还查询直接子节点 `.main-box` | SDK 内置；当前 `start()` 只接收 `appCode`，内部 `mount()` 未透传选择器，单改调用参数不能生效，需单独完成 SDK 与生成器的通用参数传递。 |
+| 新建／编辑页底部按钮 | `[devid="footerButton"]` | 位于技能生成的生命周期脚本中。它是入口按钮所在区域，不是 dialog 的挂载容器；目标环境不一致时使用经核验的自定义 `file`，多表单时须定位当前表单。 |
+| 浮窗、全屏、dialog | 不依赖 CRM 内容区选择器 | 使用 SDK 自建外壳；新建／编辑入口创建按钮时仍有上一行的区域依赖。 |
+
+当前自动写入 `selectors` 的能力仅覆盖详情右侧按钮。列表、菜单及全局右侧尚未完成同样的生成与透传改造；不能在清单中填写后直接宣称支持。开发新应用时先核验目标环境，必要时在自定义入口脚本中处理；全局 `start()` 的缺口不能用应用重复实现一套浮点和外壳来绕过。SDK 自己生成的内部节点、去重属性和样式不属于 CRM 页面 DOM 依赖。
 
 ## positions：展示位置
 
@@ -130,7 +166,7 @@ trigger里的global-floating表示小浮点入口，positions里的同名值表�
 
 以上为单个入口的类型配置片段；完整入口还需id/name/payload等字段。该例默认浮窗，可切换右侧或全屏。
 
-入口脚本调用 `mount({appCode, launcherId})`；全局浮点调用 `start({appCode, launcherId})`。SDK 按 launcherId 读取入口级 renderConfig，旧清单仍使用应用级 renderConfig。
+入口脚本调用 `mount({appCode, launcherId})`；详情右侧按钮必须额外传入 `selectors`，见[详情按钮的 DOM 选择器](#详情按钮的-dom-选择器)。全局浮点调用 `start({appCode, launcherId})`。SDK 按 launcherId 读取入口级 renderConfig，旧清单仍使用应用级 renderConfig。
 
 ## 问答流程
 

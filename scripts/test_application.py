@@ -1,5 +1,7 @@
 import json
 import pathlib
+import shutil
+import subprocess
 import tempfile
 import unittest
 import zipfile
@@ -344,6 +346,48 @@ class ResourceManifestTest(unittest.TestCase):
         self.assertNotIn('functioncode', button)
         self.assertEqual(step['payload']['objid'], 'account')
         self.assertEqual(step['placement'], 'allObjectDetailLayouts')
+
+    @unittest.skipUnless(shutil.which('node'), '需要 Node.js 执行生成的按钮脚本')
+    def test_detail_button_passes_verified_selector_to_sdk(self):
+        selector = 'section[data-label="客户\'s 商机"] > .detail-panel'
+        self.config['layoutVersion'] = 2
+        self.config['launchers'][0].update(trigger='detail-button', positions=['detail-right'],
+            objects=['Opportunity'], selectors={'detail-right': selector},
+            payload={'objid': 'opportunity', 'tpSysButtonVO': {'btnType': 'detailBtn', 'category': 'CustomButton'}})
+        install = app.validate(self.build())['installationManifest']
+        script = install['steps'][0]['payload']['tpSysButtonVO']['functionCode']
+        harness = '''global.window = {
+          AgentCiCiApp: {mount: options => console.log(JSON.stringify(options))},
+          alert: message => {throw new Error(message)}
+        };\n'''
+        result = subprocess.run(['node', '-e', harness + script], capture_output=True, text=True, check=True)
+        self.assertEqual(json.loads(result.stdout), {'appCode': 'sisi', 'launcherId': 'sisi_launcher',
+            'selectors': {'detail-right': selector}})
+        self.assertNotIn('selectors', install['renderConfig'])
+        self.assertNotIn('selectors', install['launchers'][0]['renderConfig'])
+
+    def test_detail_right_requires_selector_for_generated_script(self):
+        self.config['layoutVersion'] = 2
+        launcher = self.config['launchers'][0]
+        launcher.update(trigger='detail-button', positions=['detail-right'], objects=['Opportunity'],
+            payload={'objid': 'opportunity', 'tpSysButtonVO': {'btnType': 'detailBtn', 'category': 'CustomButton'}})
+        for value in (None, {}, 'section', {'detail-right': ''}, {'detail-right': '  '},
+                      {'detail-right': 1}, {'right': '.detail'}):
+            with self.subTest(selectors=value):
+                launcher['selectors'] = value
+                self.assertIn('launchers[0].selectors.detail-right', self.compiler.missing(self.config))
+                with self.assertRaisesRegex(ValueError, 'selectors'):
+                    self.compiler.compile_manifest(self.config, self.root)
+
+    def test_detail_button_preserves_custom_script_selector(self):
+        self.config['layoutVersion'] = 2
+        script = 'window.AgentCiCiApp.mount({appCode:"sisi",launcherId:"sisi_launcher",selectors:{"detail-right":"#custom-detail"}});'
+        (self.root / 'button.js').write_text(script)
+        self.config['launchers'][0].update(trigger='detail-button', positions=['detail-right'],
+            objects=['Opportunity'], file='button.js',
+            payload={'objid': 'opportunity', 'tpSysButtonVO': {'btnType': 'detailBtn', 'category': 'CustomButton'}})
+        install = app.validate(self.build())['installationManifest']
+        self.assertEqual(install['steps'][0]['payload']['tpSysButtonVO']['functionCode'], script)
 
     def test_four_layer_rejects_position_outside_trigger(self):
         self.config['layoutVersion'] = 2

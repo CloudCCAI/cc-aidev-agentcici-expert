@@ -99,6 +99,13 @@ def missing(config):
                 continue
             for key in ('id', 'name', 'trigger', 'positions', 'payload'):
                 if not launcher.get(key): fields.append(f'launchers[{i}].{key}')
+            if (launcher.get('trigger') == 'detail-button'
+                    and isinstance(launcher.get('positions'), list)
+                    and 'detail-right' in launcher['positions'] and not launcher.get('file')):
+                selectors = launcher.get('selectors')
+                if (not isinstance(selectors, dict) or not isinstance(selectors.get('detail-right'), str)
+                        or not selectors['detail-right'].strip()):
+                    fields.append(f'launchers[{i}].selectors.detail-right')
     agent = config.get('agent')
     if agent is not None:
         if not isinstance(agent, dict): fields.append('agent')
@@ -192,7 +199,16 @@ def compile_manifest(config, root):
             raise ValueError('展示位置与入口类型不匹配')
         for position in positions:
             if POSITIONS[position] not in render['positions']: render['positions'].append(POSITIONS[position])
-        # The bootstrap contains only the application identity. Display metadata lives in the manifest.
+        # Page-specific DOM selectors belong to the launcher script, not the SDK or render config.
+        selector_argument = ''
+        if trigger == 'detail-button' and 'detail-right' in positions and not launcher.get('file'):
+            selectors = launcher.get('selectors')
+            if (not isinstance(selectors, dict) or not isinstance(selectors.get('detail-right'), str)
+                    or not selectors['detail-right'].strip()
+                    or any(not isinstance(k, str) or not k.strip() or not isinstance(v, str) or not v.strip()
+                           for k, v in selectors.items())):
+                raise ValueError(f'入口 {key} 的 selectors["detail-right"] 必须为经目标CRM页面核验的非空DOM选择器')
+            selector_argument = ', selectors: ' + json.dumps(selectors, ensure_ascii=False)
         method = 'start' if trigger == 'global-floating' else 'mount'
         script = """(async function () {
   const appCode = %s;
@@ -209,8 +225,8 @@ def compile_manifest(config, root):
     });
     await window.__agentCiCiAppSdkLoad;
   }
-  await window.AgentCiCiApp.%s({ appCode, launcherId: %s });
-})().catch(error => window.alert(error.message || '应用打开失败。'));""" % (json.dumps(config['appCode'], ensure_ascii=False), method, json.dumps(key, ensure_ascii=False))
+  await window.AgentCiCiApp.%s({ appCode, launcherId: %s%s });
+})().catch(error => window.alert(error.message || '应用打开失败。'));""" % (json.dumps(config['appCode'], ensure_ascii=False), method, json.dumps(key, ensure_ascii=False), selector_argument)
         if launcher.get('file'):
             file = root / launcher['file']
             if file.is_symlink() or not file.resolve().is_relative_to(root): raise ValueError('脚本必须位于应用目录内')

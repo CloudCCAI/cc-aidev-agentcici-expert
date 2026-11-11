@@ -194,7 +194,7 @@ CloudCC 菜单、按钮和浮动入口统一加载目标服务提供的 `sdk/age
 
 ## 公共SDK负责的CRM嵌入行为（应用验收边界）
 
-以下是公共SDK的职责，用于应用验收；应用不复制这些DOM、消息和生命周期实现。默认菜单由打包器生成SDK启动脚本，旧menu清单才使用 `assets/application-menu.js` 兼容模板。SDK嵌入 `.console-right-content`，使用 prepend 添加自身 section，不覆盖 CRM 节点，不创建全屏遮罩或额外关闭按钮。iframe 允许 clipboard-write，宽度100%，高度依据容器高度与视口剩余空间取较小值。
+以下是公共SDK的职责，用于应用验收；应用不复制这些DOM、消息和生命周期实现。默认菜单由打包器生成SDK启动脚本，旧menu清单才使用 `assets/application-menu.js` 兼容模板。当前菜单的内容锚点仍默认依赖 `.console-right-content`，需核验目标 CRM 页面，不能把它当成通用契约；其他入口的固定锚点及尚未完成的参数传递见[其他入口的 DOM 依赖与当前边界](application-manifest.md#其他入口的-dom-依赖与当前边界)。SDK 保留 CRM 节点并管理自己的外壳和占位。iframe 允许 clipboard-write，宽度100%，高度依据容器高度与视口剩余空间取较小值。
 
 - 使用 `window.AgentCiCiAppEmbed.destroy()` 销毁上一个实例，再创建本次实例，所有应用采用同一宿主实例入口。
 - 先获取 runtime 配置，再创建 iframe；postMessage 继续校验来源窗口、精确 origin、协议版本和 requestId，凭据不进入 URL。
@@ -206,6 +206,8 @@ CloudCC 菜单、按钮和浮动入口统一加载目标服务提供的 `sdk/age
 ## 统一宿主 SDK
 
 公共 SDK 是目标 AgentCiCi 服务提供的已发布资源 `sdk/agentcici-app@1.1.0.js`；应用开发不要求平台源码仓库或 frontend/public 目录。若应用需要随站点携带子页SDK，使用经确认的官方分发文件，记录来源/摘要和兼容验证，避免不同副本无记录漂移。菜单和脚本按钮调用 `AgentCiCiApp.mount({appCode, launcherId})`，全局悬浮入口调用 `AgentCiCiApp.start({appCode, launcherId})`。位置和 iframe/Shadow DOM 渲染方式由安装快照中对应入口的 renderConfig 决定；旧清单回退应用级 renderConfig。入口不再内联 runtime 请求、CCDK 换票或 iframe DOM。
+
+详情页自定义按钮在右侧展开时，必须由按钮脚本显式传入 `selectors['detail-right']`，不能依赖 SDK 内置容器。先核验目标 CRM 详情页 DOM，再按[详情按钮的 DOM 选择器](application-manifest.md#详情按钮的-dom-选择器)填写源清单或自定义脚本，并检查包内及安装后真实按钮的 `functionCode`。选择器不是 `renderConfig`，也不在公共 SDK 中配置。
 
 普通页面继续使用上述协议，context 额外提供 display、pageContext；存在连接应用时附加 cloudccContext。业务关闭方式、宿主层级和 CloudCC SSO 票据参数必须由各应用的 host 清单声明，公共 SDK 只执行通用协议，不识别具体 appCode、业务路由或票据前缀。Shadow DOM 应用通过 register 挂载，原生 Web 页面可使用 iframe，无需增加嵌入构建。SDK 已实现不代表目标环境已部署；不得在菜单里嵌入真实密钥。
 

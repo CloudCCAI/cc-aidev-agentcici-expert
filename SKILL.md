@@ -1,13 +1,13 @@
 ---
 name: cc-aidev-agentcici-expert
 metadata:
-  version: "2.0.6"
+  version: "2.0.7"
 description: 使用开发者密钥管理 AgentCiCi 组织内智能体、技能、知识库和 MCP 服务，发现并读取 MCP 工具后关联智能体；指导第三方 Web AI 应用开发、CloudCC 自定义对象与自定义类开发、站点与脚本菜单集成，并将前端产物、原生智能体包和技能包整理为发布申请 ZIP 并提交到已部署的接收接口。用于平台资源管理、应用开发与申请包准备；自动安装须先核对服务端能力。
 ---
 
 # AgentCiCi 平台管理
 
-当前技能版本为 `2.0.6`。
+当前技能版本为 `2.0.7`。
 
 本 Skill 同时服务两个阶段：设计阶段先理解模块职责与边界，实施阶段再调用明确的管理 API。不要在不了解现有资源的情况下直接写入。
 
@@ -101,13 +101,15 @@ AI 应用开发的工作目录固定在 `applications/<appCode>/`；新建首个
 
 脚本菜单的 `payload.pname` 必须为 2–20 个字符，以英文字母开头，仅允许英文字母、数字和下划线，例如 `customer_insight`。显式配置菜单时按 [CRM 菜单内部标识规范](references/application-manifest.md#crm-菜单内部标识) 填写并在发布前校验。
 
-新应用的入口脚本向 `agentcici-app@1.1.0.js` 传 `appCode` 和稳定的 `launcherId`，不要传 name/icon/position。名称、图标、触发方式与入口级渲染配置保存到资源清单；公共 SDK 按 appCode 请求 setup runtime 的已安装快照。全局浮点使用 `start({appCode, launcherId})`，菜单/脚本按钮使用 `mount({appCode, launcherId})`。入口浮点、拖动、去重和清理属于公共 SDK，不在每个应用复制一份。
+新应用的入口脚本向 `agentcici-app@1.1.0.js` 传 `appCode` 和稳定的 `launcherId`，不要传 name/icon/position。名称、图标、触发方式与入口级渲染配置保存到资源清单；公共 SDK 按 appCode 请求 setup runtime 的已安装快照。全局浮点使用 `start({appCode, launcherId})`，菜单/脚本按钮使用 `mount({appCode, launcherId})`。详情页自定义按钮在右侧展开时，还必须在按钮脚本中显式传入 `selectors['detail-right']`：先核验目标 CRM 页面的实际 DOM，再将选择器写入 launcher 清单或自定义 `file` 脚本。DOM 选择器由按钮声明，SDK 只使用传入值，不应在 SDK 中配置页面容器，也不得依赖现有 SDK 的历史默认值。详见[详情按钮的 DOM 选择器](references/application-manifest.md#详情按钮的-dom-选择器)。入口浮点、拖动、去重和清理属于公共 SDK，不在每个应用复制一份。
 
 普通 iframe Web 应用也必须在子页面引入同一 SDK，用 `AgentCiCiApp.createClient(...)` 获取宿主上下文；不再自行实现 `message` 监听、requestId 关联、超时或来源校验，也不要预置部署域名白名单。本地模式仅在顶层 localhost 页面显式传入 `localContext`。完整用法与验收见 [Web 应用开发](references/web-app-development.md#web-应用子页-sdk)。
 
 新 AI 应用默认创建并绑定 CloudCC 连接应用：源清单省略 `connectedApplications` 时按 `true` 编译，安装清单生成 `requiresConnectedApplication=true`。只有用户明确要求不创建、且应用不需要 CloudCC 用户身份或 OpenAPI 能力时，才显式设为 `false`。
 
 打包工具默认生成完整启动 JS，放入 installationManifest.steps 的 scriptContent/functioncode；application/launchers/renderConfig 一起随包提交。setup-svc 安装时保存清单，解析 SDK 地址占位符并按固定资源类型创建客户端脚本、菜单、按钮；setup-web 只预览和发起安装，不再代为调用资源创建接口。旧版本安装不会自动获得新入口配置，需要发布新版本并升级。
+
+菜单、列表按钮、全局右侧和新建／编辑页底部按钮仍存在默认 DOM 依赖或选择器未透传的边界。接入这些入口前读取[其他入口的 DOM 依赖与当前边界](references/application-manifest.md#其他入口的-dom-依赖与当前边界)，按实际能力处理，不能仅在源清单填写 `selectors` 就声称已生效。
 
 新建页和编辑页入口未提供自定义 `file` 时，打包器自动生成 CRM 表单底部按钮的生命周期脚本；仍需确认对象范围并配置对应页面的 `pageType/onLoad` 资源参数。详见 [资源清单类型](references/application-manifest.md)。
 
