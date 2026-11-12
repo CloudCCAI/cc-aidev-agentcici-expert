@@ -54,9 +54,13 @@ class ManagementTests(unittest.TestCase):
             self.run_command('agents', 'bind-skills', 'a', '--json', '{}')
 
     def test_tool_binding_accepts_runtime_policies(self):
-        body = {'toolIds': ['managed_web_search'],
-                'toolLoadingModes': {'managed_web_search': 'always-on'},
-                'toolRuntimePolicies': {'managed_web_search': {'preset': 'FAST'}}}
+        body = {'toolIds': ['managed_web_search', 'structured_web_search'],
+                'toolLoadingModes': {'managed_web_search': 'always-on', 'structured_web_search': 'on-demand'},
+                'toolRuntimePolicies': {
+                    'managed_web_search': {'policyVersion': 2, 'qualityMode': 'QUICK_PREVIEW', 'preset': 'FAST'},
+                    'structured_web_search': {'preset': 'CUSTOM', 'maxCallsPerRun': 1,
+                                              'maxAttemptsPerRun': 2, 'singleCallTimeoutMs': 10000,
+                                              'maxResults': 10, 'queryRewrite': False}}}
         import json
         client = self.run_command('agents', 'bind-tools', 'a', '--json', json.dumps(body))
         client.request.assert_called_once_with('PATCH', '/openapi/v1/management/agents/a', body)

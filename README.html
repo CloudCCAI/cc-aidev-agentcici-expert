@@ -19,7 +19,7 @@
 </head>
 <body><main>
   <h1>AgentCiCi 开发与管理 Skill</h1>
-  <section class="summary"><strong>阅读摘要</strong><p>这是一个给 Codex 等 AI 智能体使用的 Skill。用户不需要手动运行管理脚本，只需要用自然语言说明目标。当前版本为 <code>2.0.7</code>。</p></section>
+  <section class="summary"><strong>阅读摘要</strong><p>这是一个给 Codex 等 AI 智能体使用的 Skill。用户不需要手动运行管理脚本，只需要用自然语言说明目标。当前版本为 <code>2.1.0</code>。</p></section>
   <p>AI应用开发只在 <code>applications/&lt;appCode&gt;/</code> 进行，不需要平台backend/frontend/deploy源码。每个应用独立维护清单、源码与发布产物；CloudCC资源集中在 <code>cloudcc/</code>，类为 <code>cloudcc/backend/classes/</code>。项目根目录共用配置和CRM缓存，适配器临时链接后在应用cloudcc工程内操作，不创建根backend映射。<a href="references/application-manifest.md#项目与多应用目录">查看目录规则</a>。已有项目保留其结构，不自动迁移。</p>
   <p><a href="references/development-workflow.md">AI App七阶段流程</a>涵盖Web、对象/字段、自定义类，以及智能体、技能、知识库和MCP关联；AgentCiCi与CRM开发凭据分别配置。知识库开发者管理与组织应用发布需部署对应后端并授予scope。</p>
   <p>Web 使用原生 HTML、CSS、JavaScript；业务按需采用 Web → 自定义类 → 自定义对象、Web → Agent（智能体）两条调用链。</p>
@@ -28,7 +28,12 @@
     <li><a href="#web">AI Web 应用</a></li><li><a href="#release">发布申请</a></li><li><a href="#principles">操作原则</a></li>
   </ul></nav>
 
+  <h2>2.1.0 更新说明</h2><p>新增确定性 <code>/openapi/v1/web/discover</code> 与 <code>/openapi/v1/web/fetch</code> 端点；搜索只返回候选，批量抓取只读取明确 URL，并逐 URL 返回跳转、HTTP、阶段耗时、正文及失败诊断。整轮截止会取消子任务并保留部分结果。</p>
+  <h2>2.0.9 更新说明</h2><p>百炼 <code>policyVersion: 2</code> 修正为确定性分层：搜索只返回候选来源，正文必须对明确 URL 显式抓取。运行 OpenAPI 新增服务端强制 <code>toolPolicy</code> 与独立 <code>researchResult</code>；v2 完成真实 UAT 前不作为新绑定默认值，既有 v1 语义不变。</p>
+  <h2>2.0.8 更新说明</h2><p>百炼托管联网搜索新增 <code>policyVersion: 2</code> 质量优先策略。该版本的搜索内自动抓取设计已由 2.0.9 撤销；本节只保留版本沿革。</p>
   <h2>2.0.7 更新说明</h2><p>详情页自定义按钮在右侧展开应用时，必须由按钮脚本显式传入 <code>selectors['detail-right']</code>；先核验目标 CRM DOM，不在 SDK 配置选择器或依赖历史默认值。源清单的 launcher 可配置 <code>selectors</code>，打包器将其写入按钮 <code>functionCode</code>，自动生成的详情右侧脚本缺少有效选择器时拒绝打包。自定义脚本原样保留，按同一要求验收。详见<a href="references/application-manifest.md#详情按钮的-dom-选择器">详情按钮的 DOM 选择器</a>。另已核对列表、菜单、全局固定右侧及新建／编辑底部按钮的固定锚点，记录尚未完成的选择器透传边界，未宣称其他入口已修复。</p>
+
+  <p>新增独立默认工具 <code>structured_web_search</code> 与 <code>structured_web_fetch</code> 的选择、绑定和运行策略说明；它们与百炼工具使用不同配置、预算、计量和失败域，不允许静默回退。补充结构化来源、网页正文、运行内缓存、真实 HTTP attempt 与费用估算边界。</p>
   <h2>2.0.6 更新说明</h2><p>对齐智能体创建接口的历史兼容字段：<code>model</code> 仍为必填项，统一传 <code>"platform-scene"</code>；实际对话模型由平台场景解析，不通过智能体定义选择或切换。</p>
   <h2>2.0.5 更新说明</h2><p>网页安全直读改为连接和首字节有界、总计最多 8 秒，并在预算允许时为百炼回退至少保留 20 秒；工具结果提供直读阶段诊断。用户明确要求最少来源数时，只从本轮结构化来源账本补齐引用，不重新联网或使用无关链接凑数。运行 OpenAPI 的商业并发额度不足返回可重试的 HTTP 429 <code>runtime_concurrency_exceeded</code>。</p>
   <h2>2.0.4 更新说明</h2><p>托管联网搜索明确区分完整成功、保留来源的部分成功、完成但无来源和失败且无来源；零来源不再算成功。<code>SOURCES_FIRST</code> 至少观察两个有效来源批次或等待收集窗口结束，上游随后失败时保留已取得来源。网页抓取的直连尝试最多占用 3 秒，兼容模型调用 <code>web_extractor</code> 时始终开启百炼要求的推理参数。</p>

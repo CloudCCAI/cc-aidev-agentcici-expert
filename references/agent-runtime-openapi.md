@@ -49,7 +49,26 @@ curl -X POST "${AGENTCICI_API_BASE%/}/chat-messages" \
 
 租户运行并发额度暂时用尽时，阻塞调用返回 HTTP 429／`runtime_concurrency_exceeded` 和 `Retry-After`；已经建立 HTTP 200 SSE 的流式调用通过 `error` 事件返回同一错误码。错误详情中的 `retryable=true` 和 `retryAfterMs` 表示可以有界退避；调用方等待建议时间后重试，最多两次，并继续复用原幂等键。不要把该错误显示为百炼、模型或工具 502，也不要无间隔并发重放。HTTP 500、502 和无证据工具失败不适用此退避规则，应按各自错误码诊断。
 
-阻塞回答使用托管联网搜索且取得结构化来源时，响应 `data.runtime.webSources` 返回本轮来源账本的 URL、标题和域名，供严格 JSON 输出或应用自己的来源区域使用。该账本只证明搜索上游返回了结构化来源，不等于网页正文已经通过 `managed_web_extract` 核验。
+阻塞回答使用任一已绑定联网搜索且取得结构化来源时，响应 `data.runtime.webSources` 返回本轮模型实际可见来源账本的 URL、标题和域名，供严格 JSON 输出或应用自己的来源区域使用。该账本只证明搜索上游返回了结构化来源，不等于网页正文已经通过对应抓取工具核验。`managed_web_*` 与 `structured_web_*` 是独立供应方式；运行端不得在失败时替调用方静默切换。
+
+需要严格隔离工具时，在请求体增加服务端执行的 `toolPolicy`，不要只在 query 或提示词中描述限制：
+
+```json
+{
+  "toolPolicy": {
+    "allowedTools": ["managed_web_search"],
+    "forbiddenTools": ["managed_web_extract"],
+    "requiredTool": "managed_web_search",
+    "executionMode": "TOOL_ONLY",
+    "maxToolCalls": 1,
+    "maxProviderSearchCalls": 3,
+    "maxProviderFetchCalls": 0,
+    "totalTimeoutMs": 45000
+  }
+}
+```
+
+`allowedTools` 会收窄本轮工具目录，因此 `tool_load` 也不能加载禁止工具。`requiredTool` 未实际执行时，平台拒绝模型直接答案；`TOOL_ONLY` 会缓冲最终输出。阻塞响应的 `data.researchResult` 独立返回来源账本、质量状态、平台调用计数和实际生效策略，不依赖模型把工具结果重新整理进答案。
 
 ## 运行端点
 
@@ -59,6 +78,8 @@ curl -X POST "${AGENTCICI_API_BASE%/}/chat-messages" \
 |---|---|
 | 参数信息 | `GET /parameters` |
 | 发送消息 | `POST /chat-messages` |
+| 确定性来源发现 | `POST /web/discover` |
+| 确定性批量网页读取 | `POST /web/fetch` |
 | 停止流式任务 | `POST /chat-messages/{taskId}/stop` |
 | 会话列表 | `GET /conversations` |
 | 消息列表 | `GET /messages` |
@@ -69,6 +90,8 @@ curl -X POST "${AGENTCICI_API_BASE%/}/chat-messages" \
 | 上传文件 | `POST /files/upload` |
 | 导入远程文件 | `POST /files/import` |
 | 申请语音凭证 | `POST /voice-sessions?scene=voice-asr` |
+
+`POST /web/discover` 只返回搜索候选，不抓取正文；请求可包含 `query`、`context`、`maxResults`（1–50）、`maxSearchRequests`（1–5）和 `totalTimeoutMs`。`POST /web/fetch` 接受 `urls`（1–8个）、`concurrency`（1–4）、`timeoutPerUrlMs`、`maxContentCharsPerUrl` 与 `totalTimeoutMs`，只做严格公共 HTTP/HTTPS 读取，不调用模型或发现新 URL。结果逐 URL 返回最终地址、跳转链、HTTP状态、内容类型、首字节和总耗时、正文/哈希或明确失败阶段；整轮截止时取消未完成子任务并保留已完成结果。两者使用运行 Key 的 `chat` scope、分钟/日调用额度，并要求智能体当前分别绑定 `managed_web_search` 或 `managed_web_extract`。
 
 上传接口返回文件 `id` 后，在 `chat-messages.files[].upload_file_id` 中引用。文件类型、大小、模型能力或解析失败都应作为明确错误处理，不要静默忽略附件。
 

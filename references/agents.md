@@ -73,19 +73,25 @@ python3 /installed/agentcici/scripts/agentcici_manage.py agents delete AGENT_ID 
   },
   "toolRuntimePolicies": {
     "managed_web_search": {
+      "policyVersion": 2,
       "preset": "CUSTOM",
-      "singleCallTimeoutMs": 30000,
-      "maxCallsPerRun": 1,
-      "maxOutputTokens": 1024,
-      "responseMode": "SOURCES_FIRST",
-      "reasoningEffort": "LOW",
-      "maxReturnedSources": 10,
-      "sourceCollectionWindowMs": 1200,
-      "minReturnedSources": 5,
-      "minDistinctDomains": 3,
-      "maxSourcesPerDomain": 2
+      "qualityMode": "CUSTOM",
+      "totalRuntimeTimeoutMs": 110000,
+      "acquisitionTimeoutMs": 70000,
+      "answerTimeoutMs": 30000,
+      "closingReserveMs": 10000,
+      "maxPlannedQueries": 3,
+      "targetCandidateSources": 8,
+      "minDistinctDomains": 4,
+      "minVerifiedPages": 4,
+      "minDisplayedCitations": 4,
+      "maxPagesToFetch": 6,
+      "requirePrimarySource": true,
+      "requireConflictCheck": false,
+      "maxSourcesPerDomain": 3,
+      "allowInsufficientAnswer": false
     },
-    "managed_web_extract": {"preset": "FAST"}
+    "managed_web_extract": {"preset": "BALANCED"}
   }
 }
 ```
@@ -94,11 +100,13 @@ python3 /installed/agentcici/scripts/agentcici_manage.py agents delete AGENT_ID 
 python3 /installed/agentcici/scripts/agentcici_manage.py agents bind-tools AGENT_ID --file /absolute/path/web-tools.json
 ```
 
-预设为 `FAST`、`BALANCED`、`DEEP`；需要逐项设置时使用 `CUSTOM`。搜索可配置 `singleCallTimeoutMs`（10000–120000）、`maxCallsPerRun`（1–3）、`maxOutputTokens`（256–4096）、`responseMode`（`SOURCES_FIRST`/`FULL_ANSWER`）、`reasoningEffort`（`LOW`/`BALANCED`）、`maxReturnedSources`（1–50）、`sourceCollectionWindowMs`（0–5000）、`minReturnedSources`（1–20）、`minDistinctDomains`（1–10）和 `maxSourcesPerDomain`（1–5）；`minReturnedSources` 不得大于 `maxReturnedSources`。抓取可配置超时、调用次数（1–10）、输出上限（512–8192）、推理档位、`alternateSourceOnce` 与 `maxContentChars`（5000–100000）。
+`policyVersion: 2` 当前是实验策略，完成真实 UAT 前不作为新绑定默认值。无论 `qualityMode` 为 `QUICK_PREVIEW`、`BALANCED`、`DEEP` 还是 `CUSTOM`，`managed_web_search` 都只发现候选 URL，绝不自动抓取正文；其 `verifiedPageCount` 固定为0、`qualitySatisfied=false`。要形成网页证据，调用方必须对选中的明确 URL 显式调用 `managed_web_extract`。搜索工具可以单独绑定，不再因使用 v2 而强制同时绑定抓取工具；阻塞 `api` 渠道仍不允许 `DEEP`。
+
+未带 `policyVersion` 的历史策略仍按v1解释，字段包括 `singleCallTimeoutMs`、`maxCallsPerRun`、`maxOutputTokens`、`responseMode`、`reasoningEffort`、`maxReturnedSources`、`sourceCollectionWindowMs`、`minReturnedSources`、`minDistinctDomains` 和 `maxSourcesPerDomain`。读取旧智能体后不要仅因普通保存改写成v2；只有用户明确升级并重新发布时才提交 `policyVersion: 2`。
 
 `SOURCES_FIRST` 从首批有效结构化来源开始计算短窗口，并在来源数量与独立域名门槛满足、来源上限到达或窗口结束时返回。窗口与域名限制只影响 AgentCiCi 接收和筛选结果的方式；它们不会要求百炼必须检索指定数量的网站，也不会限制百炼单请求内部轮数。需要真正控制搜索策略、时效或站点范围时，应评估 DashScope 等支持对应参数的协议，不能把这些字段塞进 Responses 请求。
 
-`maxCallsPerRun` 只限制 AgentCiCi 外层工具调用。百炼 Responses 在一次请求内仍可能自主执行多轮 `web_search_call`/`web_extractor_call`，当前协议没有可兑现的上游次数硬限制；不要使用 Responses 不支持的 `search_strategy`、`forced_search` 或 Anthropic `max_uses`。实时对话优先 `FAST/SOURCES_FIRST`；深度调研才使用 `DEEP/FULL_ANSWER`。读取智能体详情时回读 `toolRuntimePolicies`，编译发布后再核对新策略进入运行版本。
+v1的 `maxCallsPerRun` 只限制 AgentCiCi 外层工具调用。百炼 Responses 在一次请求内仍可能自主执行多轮 `web_search_call`/`web_extractor_call`，当前协议没有可兑现的上游次数硬限制；不要使用 Responses 不支持的 `search_strategy`、`forced_search` 或 Anthropic `max_uses`。v2 结果分别返回计划查询、平台搜索/抓取请求和供应商内部调用；供应商 usage 不完整时内部次数为 `null`，不得用平台请求数代填。读取智能体详情时回读 `toolRuntimePolicies`，编译发布后再核对新策略进入运行版本。
 
 ### 联网结果证据状态
 
@@ -108,10 +116,44 @@ python3 /installed/agentcici/scripts/agentcici_manage.py agents bind-tools AGENT
 - `PARTIAL_WITH_EVIDENCE`：已经取得可审计来源，但来源窗口提前结束、流中断或上游随后失败。可以使用 `sources`，同时向用户说明结果不完整；`terminalErrorCode` 和 `earlyReturnReason` 用于诊断。
 - `COMPLETED_WITHOUT_EVIDENCE`：上游生成了文字但没有结构化来源，工具返回 `success:false` 和 `MANAGED_WEB_NO_AUDITABLE_SOURCES`。不得把回答正文中的链接补写成已核验引用。
 - `FAILED_WITHOUT_EVIDENCE`：调用失败且没有可用来源。
+- `CANDIDATES_READY`：v2 搜索已返回候选来源，但尚未读取正文；不能据此生成完整事实结论。
 
 `sources` 可包含 `url`、`title`、`summary`、`domain` 和 `sourceType`。搜索后先按子问题、来源类型和相关性筛选摘要；只有摘要不足的字段再调用 `managed_web_extract` 精读少量 URL。交易所/披露平台、政府监管机构和研究机构可由 `sourceType` 辅助排序，但来源类型不等于事实已核验。网页抓取先进行安全直读：连接最多 2 秒、首字节等待最多 3 秒，收到合法文本响应后直读总计最多 8 秒；预算允许时至少为百炼回退保留 20 秒。`directRead.status`、`httpStatus`、`firstByteLatencyMs`、`bytesRead` 和 `finalUrl` 用于区分站点、正文下载及中间网络问题，这些平台安全预算不作为工具绑定参数暴露。
 
 用户明确要求“至少 N 个来源／链接／引用”时，最终回答会从本轮 `sources` 账本补足相关引用；补齐不会重新调用联网工具。账本本身不足时必须说明实际数量，不得用无关链接凑数。`minReturnedSources` 控制工具层收集目标，不等同于模型一定展示的引用数；验收必须同时检查工具来源和最终回答。
+
+## 火山结构化联网工具访问策略
+
+`structured_web_search`（火山联网搜索）和 `structured_web_fetch`（火山网页抓取）是另一组独立默认工具，不是 `managed_web_search`／`managed_web_extract` 的别名或回退通道。绑定哪一项就明确使用哪一种供应方式；两组可以同时绑定，但应在智能体流程中写清选择条件，避免对同一问题重复调用和重复计费。任一组失败时不得静默切换另一组。
+
+```json
+{
+  "toolIds": ["structured_web_search", "structured_web_fetch"],
+  "toolLoadingModes": {
+    "structured_web_search": "always-on",
+    "structured_web_fetch": "always-on"
+  },
+  "toolRuntimePolicies": {
+    "structured_web_search": {
+      "preset": "CUSTOM",
+      "singleCallTimeoutMs": 15000,
+      "maxCallsPerRun": 2,
+      "maxAttemptsPerRun": 3,
+      "maxResults": 20,
+      "queryRewrite": true
+    },
+    "structured_web_fetch": {
+      "preset": "FAST"
+    }
+  }
+}
+```
+
+两项工具均支持 `FAST`、`BALANCED`、`DEEP`、`CUSTOM`。搜索自定义字段为 `singleCallTimeoutMs`（5000–30000）、`maxCallsPerRun`（1–3）、`maxAttemptsPerRun`（不得小于调用数，最多6）、`maxResults`（1–50）和 `queryRewrite`；抓取为超时、调用数（1–10）、真实 HTTP 尝试数（1–20）及 `maxContentChars`（5000–50000）。`maxCallsPerRun` 统计模型发起的逻辑调用，`maxAttemptsPerRun` 统计包含有限重试的真实 HTTP 请求；默认预设不会额外放大重试额度，只有显式提高 attempt 上限才可能对临时错误重试一次。
+
+搜索结果的 `sources[].summary` 是结构化搜索摘要，不等于已抓取原文；需要正文证据时再对少量公开 URL 调用 `structured_web_fetch`。抓取正文只在当前运行和模型上下文内使用，持久化 Trace、会话状态和 SSE 工具结果会移除正文与摘要。同一运行对相同 URL 的成功结果或确定性失败可命中短期缓存，缓存不跨运行。`providerUsage.observedAttempts` 是本平台观察值而非供应商账单；`estimatedCost` 依赖平台配置，`billingConfirmed:false` 时不得称为已出账费用。
+
+平台未配置、能力未单独检测通过、账号级 QPS、attempt 预算、URL 安全校验或上游权限不满足时，工具会以 `STRUCTURED_WEB_*` 错误失败关闭。`700429`、`10500`、`10502` 等临时错误才可能在同一绝对截止时间内有限重试；参数、权限、额度、合规拒绝、空正文不重试。
 
 示例中的 `DRAFT_VERSION_NO` 必须替换为本次编译返回的 `draftVersionNo` 正整数，不写死版本号。编译会保存新草稿版本；先检查编译结果，再发布该版本，后端执行现有发布校验。通用发布不添加 API 渠道；开启运行 OpenAPI 参考运行接口文档。
 

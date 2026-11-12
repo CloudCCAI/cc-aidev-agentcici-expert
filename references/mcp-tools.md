@@ -46,6 +46,8 @@ MCP 服务是 AgentCiCi 连接外部工具能力的服务配置。一个服务�
 3. 读取目标智能体详情，保留现有 `toolIds`，只加入用户选中的现有工具名称，运行 `agents bind-tools AGENT_ID --file /absolute/path/binding.json`。请求体是完整 `{"toolIds":["existing_tool","selected_tool"]}`；此命令替换全部工具关联。
 4. 如需生效到已发布智能体，按 [智能体编译发布](agents.md#关联资源与编译发布) 编译并发布本次返回的版本。技能的 `toolWhitelist` 如有限制，也要包含选中的工具。
 
+`tools list` 还可能返回平台默认工具 `structured_web_search` 和 `structured_web_fetch`。它们由平台集成统一配置，不是 MCP 发现结果，也不能通过 MCP 服务创建；只有用户明确选择该供应方式时才关联。绑定策略和与百炼工具并存时的隔离规则见[火山结构化联网工具访问策略](agents.md#火山结构化联网工具访问策略)。
+
 ## CloudCC CRM MCP选择
 
 - 业务数据处理使用 `https://mcp.cloudcc.cn/crm`，用于按真实工具能力查询、处理CRM业务记录。
